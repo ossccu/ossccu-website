@@ -217,21 +217,21 @@ export default function Home() {
             <h3 className="text-2xl font-bold mb-6 text-primary">Why Join OSSCCU?</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="flex gap-4">
-                <Zap className="text-secondary flex-shrink-0" size={24} />
+                <Zap className="text-secondary shrink-0" size={24} />
                 <div>
                   <h4 className="font-bold mb-2">Learn & Grow</h4>
                   <p className="text-foreground/70">Develop your skills through real-world open-source projects and mentorship.</p>
                 </div>
               </div>
               <div className="flex gap-4">
-                <MessageCircle className="text-primary flex-shrink-0" size={24} />
+                <MessageCircle className="text-primary shrink-0" size={24} />
                 <div>
                   <h4 className="font-bold mb-2">Community</h4>
                   <p className="text-foreground/70">Connect with like-minded developers and build lasting friendships.</p>
                 </div>
               </div>
               <div className="flex gap-4">
-                <Github className="text-accent flex-shrink-0" size={24} />
+                <Github className="text-accent shrink-0" size={24} />
                 <div>
                   <h4 className="font-bold mb-2">Impact</h4>
                   <p className="text-foreground/70">Make a real difference by contributing to projects that matter.</p>
