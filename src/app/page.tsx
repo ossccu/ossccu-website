@@ -126,7 +126,7 @@ export default function Home() {
             <Button className="bg-accent text-accent-foreground hover:bg-accent/80 neon-button px-8 py-6 text-lg">
               JOIN NOW
             </Button>
-            <Button className="border-2 border-primary text-primary hover:bg-primary/10 neon-button px-8 py-6 text-lg">
+            <Button className="border-2 border-primary text-primary-foreground bg-primary hover:bg-primary/30 neon-button px-8 py-6 text-lg">
               LEARN MORE
             </Button>
           </div>
