@@ -379,7 +379,7 @@ export default function Home() {
             </div>
           </div>
           <div className="border-t border-primary/20 pt-8 text-center text-foreground/70 text-sm">
-            <p>&copy; 2026 Open Source Software Community at City University. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Open Source Software Community at City University. All rights reserved.</p>
           </div>
         </div>
       </footer>
