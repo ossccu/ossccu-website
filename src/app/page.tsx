@@ -297,7 +297,7 @@ export default function Home() {
             <div className="bg-card border-2 border-primary/30 rounded-lg p-8 text-center hover:border-primary transition-colors">
               <Mail className="text-primary mx-auto mb-4" size={32} />
               <h3 className="font-bold mb-2">Email</h3>
-              <p className="text-foreground/70">contact@ossccu.edu</p>
+              <p className="text-foreground/70">ossccu.club@gmail.com</p>
             </div>
             <div className="bg-card border-2 border-primary/30 rounded-lg p-8 text-center hover:border-primary transition-colors">
               <MessageCircle className="text-secondary mx-auto mb-4" size={32} />
