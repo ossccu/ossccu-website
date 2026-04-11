@@ -126,11 +126,11 @@ export default function Home() {
             <Button className="bg-accent text-accent-foreground hover:bg-accent/80 neon-button px-8 py-6 text-lg" >
               JOIN NOW
             </Button>
-            <a href="#about">
-              <Button className="border-2 border-primary text-primary-foreground bg-primary hover:bg-primary/30 neon-button px-8 py-6 text-lg">
+            <Button asChild className="border-2 border-primary text-primary-foreground bg-primary hover:bg-primary/30 neon-button px-8 py-6 text-lg">
+              <a href="#about">
                 LEARN MORE
-              </Button>
-            </a>
+              </a>
+            </Button>
           </div>
         </div>
       </section>
