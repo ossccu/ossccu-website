@@ -123,11 +123,13 @@ export default function Home() {
             Join the <span className="text-primary font-bold shadow-lg">Open Source Software Community City University</span> . Collaborate, learn, and create amazing projects together.
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
-            <Button className="bg-accent text-accent-foreground hover:bg-accent/80 neon-button px-8 py-6 text-lg">
+            <Button className="bg-accent text-accent-foreground hover:bg-accent/80 neon-button px-8 py-6 text-lg" >
               JOIN NOW
             </Button>
-            <Button className="border-2 border-primary text-primary-foreground bg-primary hover:bg-primary/30 neon-button px-8 py-6 text-lg">
-              LEARN MORE
+            <Button asChild className="border-2 border-primary text-primary-foreground bg-primary hover:bg-primary/30 neon-button px-8 py-6 text-lg">
+              <a href="#about">
+                LEARN MORE
+              </a>
             </Button>
           </div>
         </div>
@@ -295,7 +297,7 @@ export default function Home() {
             <div className="bg-card border-2 border-primary/30 rounded-lg p-8 text-center hover:border-primary transition-colors">
               <Mail className="text-primary mx-auto mb-4" size={32} />
               <h3 className="font-bold mb-2">Email</h3>
-              <p className="text-foreground/70">contact@ossccu.edu</p>
+              <p className="text-foreground/70">ossccu.club@gmail.com</p>
             </div>
             <div className="bg-card border-2 border-primary/30 rounded-lg p-8 text-center hover:border-primary transition-colors">
               <MessageCircle className="text-secondary mx-auto mb-4" size={32} />
@@ -377,7 +379,7 @@ export default function Home() {
             </div>
           </div>
           <div className="border-t border-primary/20 pt-8 text-center text-foreground/70 text-sm">
-            <p>&copy; 2025 Open Source Software Community at City University. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Open Source Software Community at City University. All rights reserved.</p>
           </div>
         </div>
       </footer>
