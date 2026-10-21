@@ -26,13 +26,6 @@ OSSCCU Website is a platform designed to showcase the OSSCCU community, its proj
 3. Install the dependencies:
    ```bash
    npm install
-   # or
-   yarn install
-   # or
-   pnpm install
-   # or
-   bun install
-   
    ```
 
 ## Features

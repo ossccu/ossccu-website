@@ -1,7 +1,8 @@
-import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import ErrorBoundary from "@/components/ErrorBoundary";
-import { ThemeProvider } from "@/contexts/ThemeContext";
+import { Toaster } from "@/frontend/components/ui/sonner";
+import { TooltipProvider } from "@/frontend/components/ui/tooltip";
+import ErrorBoundary from "@/frontend/components/ErrorBoundary";
+import { ThemeProvider } from "@/frontend/contexts/ThemeContext";
+import { AuthProvider } from "@/frontend/contexts/AuthContext";
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -23,10 +24,12 @@ export default function RootLayout({
             defaultTheme="dark"
             // switchable
           >
-            <TooltipProvider>
-              <Toaster />
-              {children}
-            </TooltipProvider>
+            <AuthProvider>
+              <TooltipProvider>
+                <Toaster />
+                {children}
+              </TooltipProvider>
+            </AuthProvider>
           </ThemeProvider>
         </ErrorBoundary>
       </body>

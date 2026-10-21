@@ -20,7 +20,12 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@/db/*": ["./src/database/*"],
+      "@/database/*": ["./src/database/*"],
+      "@/database": ["./src/database/index.ts"],
+      "@/backend/*": ["./src/backend/*"],
+      "@/frontend/*": ["./src/frontend/*"]
     }
   },
   "include": [
