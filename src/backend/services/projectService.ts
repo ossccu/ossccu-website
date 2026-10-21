@@ -3,10 +3,154 @@ import { db, isDbConnected } from "@/database";
 import { projects } from "@/database/schema";
 import { eq, desc } from "drizzle-orm";
 
-const STORAGE_KEY = "ossccu_community_projects_v2";
-const LEGACY_STORAGE_KEY = "ossccu_community_projects_v1";
+const STORAGE_KEY = "ossccu_community_projects_v3";
+const LEGACY_STORAGE_KEY = "ossccu_community_projects_v2";
 
 export const DEFAULT_PROJECTS: Project[] = [
+  {
+    id: "proj-ashiq-1",
+    title: "nmclean (Node Modules Cleaner)",
+    description:
+      "A fast and lightweight CLI tool built in C and Node.js to recursively find and delete bloated node_modules directories across project repositories to recover disk space.",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80",
+    category: "Tools",
+    tags: ["Node.js", "CLI", "C", "NPM", "DevTools"],
+    author: {
+      name: "Md Shoriful Islam Ashiq",
+      role: "Software Engineer & Maintainer",
+      avatarUrl: "https://avatars.githubusercontent.com/u/22385106?v=4",
+      githubUsername: "mdsiaofficial",
+    },
+    githubUrl: "https://github.com/mdsiaofficial/nmclean",
+    demoUrl: "https://www.npmjs.com/package/nmclean",
+    featured: true,
+    status: "approved",
+    userId: "usr-ashiq",
+    userEmail: "mdsiaofficial@github.com",
+    submittedAt: "2025-01-10T10:00:00.000Z",
+    createdAt: "2025-01-10T10:00:00.000Z",
+  },
+  {
+    id: "proj-ashiq-2",
+    title: "folderly (CLI File Organizer)",
+    description:
+      "A fast and intuitive Command Line Interface (CLI) file organizer that automatically sorts and categorizes files into clean directory hierarchies by file extension and date.",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?auto=format&fit=crop&w=800&q=80",
+    category: "Tools",
+    tags: ["C", "CLI", "File System", "Automation", "NPM"],
+    author: {
+      name: "Md Shoriful Islam Ashiq",
+      role: "Software Engineer & Maintainer",
+      avatarUrl: "https://avatars.githubusercontent.com/u/22385106?v=4",
+      githubUsername: "mdsiaofficial",
+    },
+    githubUrl: "https://github.com/mdsiaofficial/folderly",
+    demoUrl: "https://www.npmjs.com/package/folderly",
+    featured: true,
+    status: "approved",
+    userId: "usr-ashiq",
+    userEmail: "mdsiaofficial@github.com",
+    submittedAt: "2025-01-12T11:00:00.000Z",
+    createdAt: "2025-01-12T11:00:00.000Z",
+  },
+  {
+    id: "proj-ashiq-3",
+    title: "ats-resume (ATS Resume Generator)",
+    description:
+      "A developer CLI tool designed to parse structured JSON resume configurations and compile clean, ATS-optimized (Applicant Tracking System) PDF resumes.",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&w=800&q=80",
+    category: "Tools",
+    tags: ["JavaScript", "PDF", "Resume", "CLI", "ATS", "JSON"],
+    author: {
+      name: "Md Shoriful Islam Ashiq",
+      role: "Software Engineer & Maintainer",
+      avatarUrl: "https://avatars.githubusercontent.com/u/22385106?v=4",
+      githubUsername: "mdsiaofficial",
+    },
+    githubUrl: "https://github.com/mdsiaofficial/ats-resume",
+    demoUrl: "https://www.npmjs.com/package/ats-resume",
+    featured: true,
+    status: "approved",
+    userId: "usr-ashiq",
+    userEmail: "mdsiaofficial@github.com",
+    submittedAt: "2025-01-15T12:00:00.000Z",
+    createdAt: "2025-01-15T12:00:00.000Z",
+  },
+  {
+    id: "proj-ashiq-4",
+    title: "bKash Payment Gateway for Next.js",
+    description:
+      "Complete merchant payment integration toolkit and webhook handler for Next.js App Router applications, facilitating seamless bKash tokenized checkout.",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=800&q=80",
+    category: "Web",
+    tags: ["Next.js", "bKash", "Payment Gateway", "FinTech", "TypeScript"],
+    author: {
+      name: "Md Shoriful Islam Ashiq",
+      role: "Software Engineer & Maintainer",
+      avatarUrl: "https://avatars.githubusercontent.com/u/22385106?v=4",
+      githubUsername: "mdsiaofficial",
+    },
+    githubUrl: "https://github.com/mdsiaofficial/bKash-with-nextjs",
+    demoUrl: "https://github.com/mdsiaofficial/bKash-with-nextjs",
+    featured: true,
+    status: "approved",
+    userId: "usr-ashiq",
+    userEmail: "mdsiaofficial@github.com",
+    submittedAt: "2025-01-20T14:30:00.000Z",
+    createdAt: "2025-01-20T14:30:00.000Z",
+  },
+  {
+    id: "proj-ashiq-5",
+    title: "ICPC Bangladesh Competitive Archive",
+    description:
+      "Curated repository of competitive programming problem solutions, algorithmic templates, and editorial discussions for ICPC Bangladesh regional contests.",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=800&q=80",
+    category: "Tools",
+    tags: ["C++", "Algorithms", "ICPC", "Competitive Programming", "Data Structures"],
+    author: {
+      name: "Md Shoriful Islam Ashiq",
+      role: "Competitive Programmer",
+      avatarUrl: "https://avatars.githubusercontent.com/u/22385106?v=4",
+      githubUsername: "mdsiaofficial",
+    },
+    githubUrl: "https://github.com/mdsiaofficial/icpc-bangladesh",
+    demoUrl: "https://codeforces.com/blog/entry/111795",
+    featured: false,
+    status: "approved",
+    userId: "usr-ashiq",
+    userEmail: "mdsiaofficial@github.com",
+    submittedAt: "2025-01-25T16:00:00.000Z",
+    createdAt: "2025-01-25T16:00:00.000Z",
+  },
+  {
+    id: "proj-ashiq-6",
+    title: "Open Source Software Guides",
+    description:
+      "A comprehensive open-source playbook detailing contribution guidelines, repo governance, licensing best practices, and effective pull request workflows.",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=800&q=80",
+    category: "Web",
+    tags: ["Open Source", "Documentation", "Git", "Community", "Guides"],
+    author: {
+      name: "Md Shoriful Islam Ashiq",
+      role: "Open Source Contributor",
+      avatarUrl: "https://avatars.githubusercontent.com/u/22385106?v=4",
+      githubUsername: "mdsiaofficial",
+    },
+    githubUrl: "https://github.com/mdsiaofficial/open-source-software-guides",
+    demoUrl: "https://github.com/mdsiaofficial/open-source-software-guides",
+    featured: false,
+    status: "approved",
+    userId: "usr-ashiq",
+    userEmail: "mdsiaofficial@github.com",
+    submittedAt: "2025-02-01T09:00:00.000Z",
+    createdAt: "2025-02-01T09:00:00.000Z",
+  },
   {
     id: "proj-1",
     title: "Study Companion",

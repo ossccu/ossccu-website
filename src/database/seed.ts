@@ -10,6 +10,114 @@ const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL ||
 
 const SEED_PROJECTS = [
   {
+    title: "nmclean (Node Modules Cleaner)",
+    description:
+      "A fast and lightweight CLI tool built in C and Node.js to recursively find and delete bloated node_modules directories across project repositories to recover disk space.",
+    coverImage:
+      "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80",
+    category: "Tools",
+    tags: ["Node.js", "CLI", "C", "NPM", "DevTools"],
+    authorName: "Md Shoriful Islam Ashiq",
+    authorRole: "Software Engineer & Maintainer",
+    authorAvatar: "https://avatars.githubusercontent.com/u/22385106?v=4",
+    authorGithub: "mdsiaofficial",
+    githubUrl: "https://github.com/mdsiaofficial/nmclean",
+    demoUrl: "https://www.npmjs.com/package/nmclean",
+    featured: true,
+    status: "approved",
+    userEmail: "mdsiaofficial@github.com",
+  },
+  {
+    title: "folderly (CLI File Organizer)",
+    description:
+      "A fast and intuitive Command Line Interface (CLI) file organizer that automatically sorts and categorizes files into clean directory hierarchies by file extension and date.",
+    coverImage:
+      "https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?auto=format&fit=crop&w=800&q=80",
+    category: "Tools",
+    tags: ["C", "CLI", "File System", "Automation", "NPM"],
+    authorName: "Md Shoriful Islam Ashiq",
+    authorRole: "Software Engineer & Maintainer",
+    authorAvatar: "https://avatars.githubusercontent.com/u/22385106?v=4",
+    authorGithub: "mdsiaofficial",
+    githubUrl: "https://github.com/mdsiaofficial/folderly",
+    demoUrl: "https://www.npmjs.com/package/folderly",
+    featured: true,
+    status: "approved",
+    userEmail: "mdsiaofficial@github.com",
+  },
+  {
+    title: "ats-resume (ATS Resume Generator)",
+    description:
+      "A developer CLI tool designed to parse structured JSON resume configurations and compile clean, ATS-optimized (Applicant Tracking System) PDF resumes.",
+    coverImage:
+      "https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&w=800&q=80",
+    category: "Tools",
+    tags: ["JavaScript", "PDF", "Resume", "CLI", "ATS", "JSON"],
+    authorName: "Md Shoriful Islam Ashiq",
+    authorRole: "Software Engineer & Maintainer",
+    authorAvatar: "https://avatars.githubusercontent.com/u/22385106?v=4",
+    authorGithub: "mdsiaofficial",
+    githubUrl: "https://github.com/mdsiaofficial/ats-resume",
+    demoUrl: "https://www.npmjs.com/package/ats-resume",
+    featured: true,
+    status: "approved",
+    userEmail: "mdsiaofficial@github.com",
+  },
+  {
+    title: "bKash Payment Gateway for Next.js",
+    description:
+      "Complete merchant payment integration toolkit and webhook handler for Next.js App Router applications, facilitating seamless bKash tokenized checkout.",
+    coverImage:
+      "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=800&q=80",
+    category: "Web",
+    tags: ["Next.js", "bKash", "Payment Gateway", "FinTech", "TypeScript"],
+    authorName: "Md Shoriful Islam Ashiq",
+    authorRole: "Software Engineer & Maintainer",
+    authorAvatar: "https://avatars.githubusercontent.com/u/22385106?v=4",
+    authorGithub: "mdsiaofficial",
+    githubUrl: "https://github.com/mdsiaofficial/bKash-with-nextjs",
+    demoUrl: "https://github.com/mdsiaofficial/bKash-with-nextjs",
+    featured: true,
+    status: "approved",
+    userEmail: "mdsiaofficial@github.com",
+  },
+  {
+    title: "ICPC Bangladesh Competitive Archive",
+    description:
+      "Curated repository of competitive programming problem solutions, algorithmic templates, and editorial discussions for ICPC Bangladesh regional contests.",
+    coverImage:
+      "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=800&q=80",
+    category: "Tools",
+    tags: ["C++", "Algorithms", "ICPC", "Competitive Programming", "Data Structures"],
+    authorName: "Md Shoriful Islam Ashiq",
+    authorRole: "Competitive Programmer",
+    authorAvatar: "https://avatars.githubusercontent.com/u/22385106?v=4",
+    authorGithub: "mdsiaofficial",
+    githubUrl: "https://github.com/mdsiaofficial/icpc-bangladesh",
+    demoUrl: "https://codeforces.com/blog/entry/111795",
+    featured: false,
+    status: "approved",
+    userEmail: "mdsiaofficial@github.com",
+  },
+  {
+    title: "Open Source Software Guides",
+    description:
+      "A comprehensive open-source playbook detailing contribution guidelines, repo governance, licensing best practices, and effective pull request workflows.",
+    coverImage:
+      "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=800&q=80",
+    category: "Web",
+    tags: ["Open Source", "Documentation", "Git", "Community", "Guides"],
+    authorName: "Md Shoriful Islam Ashiq",
+    authorRole: "Open Source Contributor",
+    authorAvatar: "https://avatars.githubusercontent.com/u/22385106?v=4",
+    authorGithub: "mdsiaofficial",
+    githubUrl: "https://github.com/mdsiaofficial/open-source-software-guides",
+    demoUrl: "https://github.com/mdsiaofficial/open-source-software-guides",
+    featured: false,
+    status: "approved",
+    userEmail: "mdsiaofficial@github.com",
+  },
+  {
     title: "Study Companion",
     description:
       "A collaborative peer-learning platform built for university students to share curated open-source study guides, track semester roadmaps, and organize study squads.",
