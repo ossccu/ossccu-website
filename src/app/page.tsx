@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/frontend/components/ui/button";
 import { Navbar } from "@/frontend/components/Navbar";
+import { Footer } from "@/frontend/components/Footer";
 import { ProjectCard } from "@/frontend/components/ProjectCard";
 import { ContributorSection } from "@/frontend/components/ContributorSection";
 import { ProjectFormDialog } from "@/frontend/components/ProjectFormDialog";
@@ -73,7 +74,7 @@ export default function Home() {
         <div className="relative z-10 container text-center max-w-4xl px-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-semibold uppercase tracking-wider mb-6 animate-in fade-in duration-300">
             <Sparkles size={14} />
-            <span>Welcome to OSS CCU</span>
+            <span>Welcome to OSSCCU</span>
           </div>
 
           <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold mb-4 tracking-tight text-white leading-tight">
@@ -263,7 +264,7 @@ export default function Home() {
           </h2>
           <p className="text-foreground/75 text-sm sm:text-base leading-relaxed mb-8">
             Guided by student convenors and batch representatives from Batch 60 through Batch 68,
-            OSS CCU is committed to open governance and equal learning opportunities for all.
+            OSSCCU is committed to open governance and equal learning opportunities for all.
           </p>
 
           <div className="flex justify-center gap-4">
@@ -280,77 +281,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-primary/20 bg-card/40 py-12 mt-auto">
-        <div className="container">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-10">
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-xl font-extrabold text-white tracking-wider font-mono">
-                  OSS <span className="text-primary">CCU</span>
-                </span>
-              </div>
-              <p className="text-foreground/70 text-xs leading-relaxed">
-                Open Source Software Community at City University (OSS CCU). Dedicated to collaborative
-                open-source engineering, education, and open technology.
-              </p>
-            </div>
-
-            <div>
-              <h4 className="font-bold text-white text-xs uppercase tracking-wider mb-3">
-                Quick Navigation
-              </h4>
-              <ul className="space-y-2 text-xs text-foreground/75">
-                <li><Link href="/" className="hover:text-primary transition-colors">Home</Link></li>
-                <li><Link href="/projects" className="hover:text-primary transition-colors">Projects Showcase</Link></li>
-                <li><Link href="/events" className="hover:text-primary transition-colors">Events & Workshops</Link></li>
-                <li><Link href="/about" className="hover:text-primary transition-colors">About & Committee</Link></li>
-                <li><Link href="/contact" className="hover:text-primary transition-colors">Contact Us</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-bold text-white text-xs uppercase tracking-wider mb-3">
-                Community
-              </h4>
-              <ul className="space-y-2 text-xs text-foreground/75">
-                <li>
-                  <a href="https://github.com/ossccu" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                    GitHub Organization
-                  </a>
-                </li>
-                <li>
-                  <a href="https://discord.gg/ossccu" target="_blank" rel="noopener noreferrer" className="hover:text-secondary transition-colors">
-                    Discord Community
-                  </a>
-                </li>
-                <li>
-                  <a href="https://twitter.com/ossccu" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                    Twitter / X
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-bold text-white text-xs uppercase tracking-wider mb-3">
-                Platform Admin
-              </h4>
-              <p className="text-xs text-foreground/70 mb-3">
-                Executive convenors can manage repository showcases, events, and user roles.
-              </p>
-              <Button asChild size="sm" variant="outline" className="border-primary/40 text-primary hover:bg-primary/10 text-xs w-full">
-                <Link href="/admin">Access Admin Console</Link>
-              </Button>
-            </div>
-          </div>
-
-          <div className="border-t border-primary/15 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} Open Source Software Community at City University (OSS CCU). Licensed under MIT.</p>
-            <p>City University, Savar, Dhaka, Bangladesh.</p>
-          </div>
-        </div>
-      </footer>
+      {/* Global Shared Footer */}
+      <Footer />
 
       {/* Quick Project Submission Modal */}
       <ProjectFormDialog

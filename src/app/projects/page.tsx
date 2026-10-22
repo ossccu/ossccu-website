@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Navbar } from "@/frontend/components/Navbar";
+import { Footer } from "@/frontend/components/Footer";
 import { ProjectShowcase } from "@/frontend/components/ProjectShowcase";
 import { ProjectFormDialog } from "@/frontend/components/ProjectFormDialog";
 import { useProjects } from "@/frontend/hooks/useProjects";
@@ -65,13 +66,8 @@ export default function ProjectsPage() {
         isAdmin={false}
       />
 
-      {/* Footer */}
-      <footer className="border-t border-primary/20 bg-card/40 py-10 mt-auto">
-        <div className="container flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Open Source Software Community at City University (OSS CCU).</p>
-          <p>Licensed under MIT. Open for all students.</p>
-        </div>
-      </footer>
+      {/* Global Footer */}
+      <Footer />
     </div>
   );
 }

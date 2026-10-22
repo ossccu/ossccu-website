@@ -8,6 +8,7 @@ import { useEvents } from "@/frontend/hooks/useEvents";
 import { useAuth } from "@/frontend/contexts/AuthContext";
 import { Project, ProjectInput, ProjectStatus } from "@/frontend/types/project";
 import { CommunityEvent, CommunityEventInput } from "@/frontend/types/event";
+import { ExecutiveRole } from "@/frontend/types/auth";
 import { ProjectFormDialog } from "@/frontend/components/ProjectFormDialog";
 import { Button } from "@/frontend/components/ui/button";
 import { Input } from "@/frontend/components/ui/input";
@@ -27,6 +28,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/frontend/components/ui/dialog";
@@ -53,45 +55,46 @@ import {
   Layers,
   Star,
   CheckCircle2,
-  Lock,
-  Unlock,
-  LogOut,
   Clock,
   XCircle,
   Check,
   X,
   Calendar,
+  MessageSquare,
+  ShieldCheck,
+  UserCheck,
 } from "lucide-react";
 import { toast } from "sonner";
-
-const AUTH_STORAGE_KEY = "ossccu_admin_session_auth_v1";
-const EXPECTED_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN || "ossccu2026";
 
 type TabFilter = "all" | "pending" | "approved" | "rejected";
 type AdminSection = "projects" | "events" | "users";
 
+const EXECUTIVE_ROLE_OPTIONS: { label: string; value: string }[] = [
+  { label: "None (General Member)", value: "none" },
+  { label: "Convenor", value: "Convenor" },
+  { label: "Joint Convenor", value: "Joint Convenor" },
+  { label: "Member Secretary", value: "Member Secretary" },
+  { label: "Joint Member Secretary", value: "Joint Member Secretary" },
+  { label: "Organizing Secretary", value: "Organizing Secretary" },
+  { label: "Assistant Organizing Secretary", value: "Assistant Organizing Secretary" },
+];
+
 export default function AdminPage() {
   const router = useRouter();
+  const { user, isLoading: isAuthLoading, refreshProfile } = useAuth();
   const {
     projects,
-    isLoading,
+    isLoading: isProjectsLoading,
     addProject,
     updateProject,
     approveProject,
-    rejectProject,
     deleteProject,
     resetProjects,
   } = useProjects();
   const { events, addEvent, updateEvent, deleteEvent } = useEvents();
-  const { user } = useAuth();
 
   // Active Admin Section
   const [adminSection, setAdminSection] = useState<AdminSection>("projects");
-
-  // Authentication State
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [pinInput, setPinInput] = useState("");
-  const [pinError, setPinError] = useState(false);
 
   // Filters & Tabs for Projects
   const [statusTab, setStatusTab] = useState<TabFilter>("all");
@@ -101,6 +104,11 @@ export default function AdminPage() {
   // Modal states for Projects
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+
+  // Rejection Feedback Modal
+  const [rejectingProject, setRejectingProject] = useState<Project | null>(null);
+  const [rejectionFeedback, setRejectionFeedback] = useState("");
+  const [isSubmittingRejection, setIsSubmittingRejection] = useState(false);
 
   // Delete confirmation
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
@@ -128,6 +136,7 @@ export default function AdminPage() {
   // User Management State
   const [userList, setUserList] = useState<any[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
 
   const fetchUsers = async () => {
     try {
@@ -150,53 +159,15 @@ export default function AdminPage() {
     }
   }, [adminSection]);
 
-  // Strict Role Guard
+  // Strict Role Guard - No PIN passkey. Admins enter immediately; non-admins get booted to /dashboard.
   useEffect(() => {
-    if (user) {
-      if (user.isAdmin) {
-        setIsAuthenticated(true);
-      } else {
-        toast.error("Access Denied: Admin privileges required");
-        router.push("/dashboard");
+    if (!isAuthLoading) {
+      if (!user || (!user.isAdmin && user.role !== "admin")) {
+        toast.error("Access Denied: Administrator role required to view console.");
+        router.replace("/dashboard");
       }
-      return;
     }
-
-    try {
-      const stored = sessionStorage.getItem(AUTH_STORAGE_KEY);
-      setIsAuthenticated(stored === "true");
-    } catch {
-      setIsAuthenticated(false);
-    }
-  }, [user, router]);
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (pinInput.trim() === EXPECTED_PIN) {
-      try {
-        sessionStorage.setItem(AUTH_STORAGE_KEY, "true");
-      } catch {
-        // Fallback for private mode
-      }
-      setIsAuthenticated(true);
-      setPinError(false);
-      toast.success("Welcome, Administrator!");
-    } else {
-      setPinError(true);
-      toast.error("Incorrect Passkey. Please verify your PIN.");
-    }
-  };
-
-  const handleLogout = () => {
-    try {
-      sessionStorage.removeItem(AUTH_STORAGE_KEY);
-    } catch {
-      // Ignored
-    }
-    setIsAuthenticated(false);
-    setPinInput("");
-    toast.info("Logged out from Admin Console.");
-  };
+  }, [user, isAuthLoading, router]);
 
   // Counts by status
   const statusCounts = useMemo(() => {
@@ -230,6 +201,20 @@ export default function AdminPage() {
       );
     });
   }, [projects, statusTab, categoryFilter, searchQuery]);
+
+  // Filtered Users
+  const filteredUsers = useMemo(() => {
+    if (!userSearchQuery.trim()) return userList;
+    const q = userSearchQuery.toLowerCase().trim();
+    return userList.filter(
+      (u) =>
+        u.name?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q) ||
+        u.studentId?.toLowerCase().includes(q) ||
+        u.githubHandle?.toLowerCase().includes(q) ||
+        u.batch?.toLowerCase().includes(q)
+    );
+  }, [userList, userSearchQuery]);
 
   // Statistics
   const stats = useMemo(() => {
@@ -267,12 +252,26 @@ export default function AdminPage() {
     }
   };
 
-  const handleReject = async (project: Project) => {
+  const handleOpenRejectDialog = (project: Project) => {
+    setRejectingProject(project);
+    setRejectionFeedback(project.moderatorFeedback || "");
+  };
+
+  const handleConfirmRejection = async () => {
+    if (!rejectingProject) return;
     try {
-      await rejectProject(project.id);
-      toast.info(`Marked "${project.title}" as rejected.`);
+      setIsSubmittingRejection(true);
+      await updateProject(rejectingProject.id, {
+        status: "rejected",
+        moderatorFeedback: rejectionFeedback.trim() || undefined,
+      });
+      toast.info(`Marked "${rejectingProject.title}" as rejected with moderator feedback.`);
+      setRejectingProject(null);
+      setRejectionFeedback("");
     } catch {
       toast.error("Failed to reject project.");
+    } finally {
+      setIsSubmittingRejection(false);
     }
   };
 
@@ -383,9 +382,8 @@ export default function AdminPage() {
     }
   };
 
-  // User handlers
-  const handleToggleUserRole = async (userId: string, currentRole: string) => {
-    const newRole = currentRole === "admin" ? "student" : "admin";
+  // User Role & Executive Role handlers
+  const handleUpdateUserRole = async (userId: string, newRole: "member" | "admin") => {
     try {
       const res = await fetch("/api/users", {
         method: "PATCH",
@@ -393,13 +391,38 @@ export default function AdminPage() {
         body: JSON.stringify({ userId, role: newRole }),
       });
       if (res.ok) {
-        toast.success(`User role updated to ${newRole}!`);
+        toast.success(`User role set to ${newRole}`);
         fetchUsers();
+        if (user?.id === userId) {
+          refreshProfile();
+        }
       } else {
         toast.error("Failed to update user role");
       }
     } catch {
       toast.error("Error updating user role");
+    }
+  };
+
+  const handleUpdateExecutiveRole = async (userId: string, execRole: string) => {
+    const value: ExecutiveRole = execRole === "none" ? null : (execRole as ExecutiveRole);
+    try {
+      const res = await fetch("/api/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, executiveRole: value }),
+      });
+      if (res.ok) {
+        toast.success(`Executive committee title updated!`);
+        fetchUsers();
+        if (user?.id === userId) {
+          refreshProfile();
+        }
+      } else {
+        toast.error("Failed to update executive role");
+      }
+    } catch {
+      toast.error("Error updating executive role");
     }
   };
 
@@ -430,87 +453,12 @@ export default function AdminPage() {
     }
   };
 
-  // Render Passkey Gate if not authenticated
-  if (isAuthenticated === null) {
+  // Role Gate Loading Screen
+  if (isAuthLoading || !user || (!user.isAdmin && user.role !== "admin")) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
         <Spinner className="size-8 text-primary" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col justify-center items-center px-4 relative overflow-hidden">
-        {/* Ambient Glows */}
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[350px] bg-primary/10 rounded-full blur-[140px] pointer-events-none" />
-
-        <div className="w-full max-w-md bg-card/90 border border-primary/30 rounded-2xl p-8 backdrop-blur-xl shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-200">
-          <div className="text-center mb-6">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/40 flex items-center justify-center text-primary mx-auto mb-4 shadow-[0_0_25px_rgba(0,217,255,0.25)]">
-              <Lock size={32} />
-            </div>
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">
-              OSS<span className="text-primary">CCU</span> Admin Access
-            </h1>
-            <p className="text-xs text-muted-foreground mt-1.5">
-              Enter the authorized executive passkey to manage community repositories.
-            </p>
-          </div>
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <label
-                htmlFor="passkey"
-                className="block text-xs font-bold uppercase tracking-wider text-slate-300"
-              >
-                Admin Passkey / PIN
-              </label>
-              <Input
-                id="passkey"
-                type="password"
-                value={pinInput}
-                onChange={(e) => {
-                  setPinInput(e.target.value);
-                  setPinError(false);
-                }}
-                placeholder="Enter passkey (e.g. ossccu2026)"
-                className={`bg-background/80 text-sm h-11 text-center font-mono tracking-widest ${
-                  pinError
-                    ? "border-destructive focus-visible:ring-destructive"
-                    : "border-primary/40 focus-visible:border-primary"
-                }`}
-                autoFocus
-              />
-              {pinError && (
-                <p className="text-xs text-destructive mt-1 text-center">
-                  Invalid passkey. Try again or check with the executive team.
-                </p>
-              )}
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold h-11 neon-button text-sm tracking-wide gap-2"
-            >
-              <Unlock size={16} />
-              Unlock Console
-            </Button>
-
-            <div className="pt-2 text-center">
-              <Button
-                asChild
-                variant="ghost"
-                size="sm"
-                className="text-xs text-muted-foreground hover:text-white"
-              >
-                <Link href="/">
-                  <ArrowLeft size={14} className="mr-1" /> Return to Website
-                </Link>
-              </Button>
-            </div>
-          </form>
-        </div>
+        <p className="text-sm font-mono text-muted-foreground">Verifying administrator authorization...</p>
       </div>
     );
   }
@@ -536,7 +484,7 @@ export default function AdminPage() {
             <div className="h-4 w-px bg-primary/20" />
             <div className="flex items-center gap-2">
               <span className="font-extrabold text-white text-lg tracking-wide font-mono">
-                OSS <span className="text-primary">CCU</span>
+                OSSCCU
               </span>
               <Badge
                 variant="outline"
@@ -584,14 +532,15 @@ export default function AdminPage() {
             )}
 
             <Button
+              asChild
               variant="ghost"
               size="sm"
-              onClick={handleLogout}
-              className="text-muted-foreground hover:text-rose-400 text-xs gap-1 h-9 px-2.5"
-              title="Log out of Admin Console"
+              className="text-muted-foreground hover:text-white text-xs gap-1.5 h-9 px-2.5"
             >
-              <LogOut size={15} />
-              <span className="hidden lg:inline">Logout</span>
+              <Link href="/dashboard">
+                <Users size={14} />
+                <span className="hidden lg:inline">My Contributor Dashboard</span>
+              </Link>
             </Button>
           </div>
         </div>
@@ -641,6 +590,9 @@ export default function AdminPage() {
           >
             <Users size={15} />
             <span>User Roles & Directory</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full font-mono bg-black/20">
+              {userList.length}
+            </span>
           </button>
         </div>
 
@@ -653,399 +605,422 @@ export default function AdminPage() {
               </h1>
               <p className="text-muted-foreground text-sm sm:text-base">
                 Review community submissions, approve student repositories, and curate the official
-                OSS CCU showcase.
+                OSSCCU showcase.
               </p>
             </div>
 
-        {/* Metric Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-card border border-primary/20 p-5 rounded-xl flex items-center justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                Total Catalog
-              </p>
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
-                {stats.total}
-              </h3>
-            </div>
-            <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
-              <Layers size={20} />
-            </div>
-          </div>
-
-          <div className="bg-card border border-primary/20 p-5 rounded-xl flex items-center justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                Pending Review
-              </p>
-              <h3 className={`text-2xl sm:text-3xl font-extrabold mt-1 ${statusCounts.pending > 0 ? "text-amber-400" : "text-white"}`}>
-                {statusCounts.pending}
-              </h3>
-            </div>
-            <div className="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-              <Clock size={20} />
-            </div>
-          </div>
-
-          <div className="bg-card border border-primary/20 p-5 rounded-xl flex items-center justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                Approved (Live)
-              </p>
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-1">
-                {statusCounts.approved}
-              </h3>
-            </div>
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-              <CheckCircle2 size={20} />
-            </div>
-          </div>
-
-          <div className="bg-card border border-primary/20 p-5 rounded-xl flex items-center justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                Contributors
-              </p>
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-cyan-300 mt-1">
-                {stats.uniqueAuthors}
-              </h3>
-            </div>
-            <div className="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-300">
-              <Users size={20} />
-            </div>
-          </div>
-        </div>
-
-        {/* Status Moderation Tabs */}
-        <div className="flex items-center gap-2 mb-6 border-b border-primary/20 pb-3 overflow-x-auto scrollbar-none">
-          <button
-            onClick={() => setStatusTab("all")}
-            className={`text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-all flex items-center gap-2 ${
-              statusTab === "all"
-                ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                : "text-foreground/70 hover:text-white hover:bg-primary/10"
-            }`}
-          >
-            <span>All Projects</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full font-mono bg-black/20">
-              {statusCounts.all}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setStatusTab("pending")}
-            className={`text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-all flex items-center gap-2 ${
-              statusTab === "pending"
-                ? "bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20"
-                : "text-foreground/70 hover:text-white hover:bg-amber-500/10"
-            }`}
-          >
-            <Clock size={14} />
-            <span>Pending Review</span>
-            <span
-              className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-                statusCounts.pending > 0
-                  ? "bg-amber-400 text-slate-950 animate-pulse"
-                  : "bg-slate-800 text-slate-400"
-              }`}
-            >
-              {statusCounts.pending}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setStatusTab("approved")}
-            className={`text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-all flex items-center gap-2 ${
-              statusTab === "approved"
-                ? "bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20"
-                : "text-foreground/70 hover:text-white hover:bg-emerald-500/10"
-            }`}
-          >
-            <CheckCircle2 size={14} />
-            <span>Approved</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full font-mono bg-black/20">
-              {statusCounts.approved}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setStatusTab("rejected")}
-            className={`text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-all flex items-center gap-2 ${
-              statusTab === "rejected"
-                ? "bg-rose-500 text-white font-bold shadow-md shadow-rose-500/20"
-                : "text-foreground/70 hover:text-white hover:bg-rose-500/10"
-            }`}
-          >
-            <XCircle size={14} />
-            <span>Rejected</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full font-mono bg-black/20">
-              {statusCounts.rejected}
-            </span>
-          </button>
-        </div>
-
-        {/* Filter Toolbar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6 bg-card/60 p-4 rounded-xl border border-primary/20">
-          <div className="relative flex-1">
-            <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
-            />
-            <Input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search projects by title, description, or author..."
-              className="pl-9 bg-background/80 border-primary/30 text-sm h-10"
-            />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="w-44">
-              <Select
-                value={categoryFilter}
-                onValueChange={(val) => setCategoryFilter(val)}
-              >
-                <SelectTrigger className="bg-background/80 border-primary/30 text-sm h-10">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-primary/30 text-foreground">
-                  <SelectItem value="All">All Categories</SelectItem>
-                  <SelectItem value="Web">Web</SelectItem>
-                  <SelectItem value="AI/ML">AI/ML</SelectItem>
-                  <SelectItem value="IoT/Robotics">IoT/Robotics</SelectItem>
-                  <SelectItem value="Tools">Tools</SelectItem>
-                  <SelectItem value="Mobile">Mobile</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-
-        {/* Project List */}
-        {isLoading ? (
-          <div className="py-24 flex flex-col items-center justify-center gap-3">
-            <Spinner className="size-8 text-primary" />
-            <p className="text-sm text-muted-foreground font-mono">
-              Loading administration records...
-            </p>
-          </div>
-        ) : filteredProjects.length > 0 ? (
-          <div className="space-y-4">
-            {filteredProjects.map((project) => (
-              <div
-                key={project.id}
-                className={`bg-card/75 border rounded-xl p-5 transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-5 group ${
-                  project.status === "pending"
-                    ? "border-amber-500/40 bg-amber-500/5 hover:border-amber-400"
-                    : "border-primary/20 hover:border-primary/50"
-                }`}
-              >
-                {/* Left: Banner & Info */}
-                <div className="flex items-start sm:items-center gap-4 min-w-0">
-                  <div className="w-20 h-20 rounded-lg overflow-hidden bg-slate-900 border border-primary/20 shrink-0 relative">
-                    {project.thumbnailUrl ? (
-                      <img
-                        src={project.thumbnailUrl}
-                        alt={project.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-primary/40">
-                        <Code2 size={24} />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                      <h3 className="text-lg font-bold text-white group-hover:text-primary transition-colors truncate">
-                        {project.title}
-                      </h3>
-                      {renderStatusBadge(project.status)}
-                      <Badge
-                        variant="outline"
-                        className="border-primary/40 text-primary text-[10px] px-2 py-0"
-                      >
-                        {project.category}
-                      </Badge>
-                      {project.featured && (
-                        <Badge className="bg-secondary/90 text-secondary-foreground text-[10px] px-2 py-0 font-bold flex items-center gap-1">
-                          <Sparkles size={10} />
-                          Featured
-                        </Badge>
-                      )}
-                    </div>
-
-                    <p className="text-xs text-foreground/70 line-clamp-2 mb-2 max-w-2xl">
-                      {project.description}
-                    </p>
-
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                      <span>
-                        Author:{" "}
-                        <strong className="text-slate-200">{project.author.name}</strong> (
-                        {project.author.role})
-                      </span>
-                      <span>•</span>
-                      <span>
-                        Submitted:{" "}
-                        {new Date(project.submittedAt || project.createdAt).toLocaleDateString()}
-                      </span>
-                      <span>•</span>
-                      <div className="flex flex-wrap gap-1">
-                        {project.tags.slice(0, 3).map((tag, idx) => (
-                          <span
-                            key={idx}
-                            className="bg-primary/10 text-cyan-300 px-1.5 py-0.2 rounded text-[10px]"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {project.tags.length > 3 && (
-                          <span className="text-[10px] text-muted-foreground">
-                            +{project.tags.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+            {/* Metric Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <div className="bg-card border border-primary/20 p-5 rounded-xl flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                    Total Catalog
+                  </p>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
+                    {stats.total}
+                  </h3>
                 </div>
-
-                {/* Right: Actions */}
-                <div className="flex flex-wrap items-center gap-2 lg:self-center shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-primary/15">
-                  {/* Moderation Actions for Pending Projects */}
-                  {project.status === "pending" && (
-                    <>
-                      <Button
-                        size="sm"
-                        onClick={() => handleApprove(project)}
-                        className="bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-bold text-xs h-9 px-3 gap-1 shadow-md shadow-emerald-500/20"
-                      >
-                        <Check size={14} />
-                        <span>Approve</span>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleReject(project)}
-                        className="border-rose-500/40 text-rose-400 hover:bg-rose-500/10 text-xs h-9 px-3 gap-1"
-                      >
-                        <X size={14} />
-                        <span>Reject</span>
-                      </Button>
-                    </>
-                  )}
-
-                  {/* Re-approve for Rejected Projects */}
-                  {project.status === "rejected" && (
-                    <Button
-                      size="sm"
-                      onClick={() => handleApprove(project)}
-                      className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 text-xs h-9 px-3 gap-1"
-                    >
-                      <Check size={14} />
-                      <span>Re-Approve</span>
-                    </Button>
-                  )}
-
-                  {/* External Links */}
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="sm"
-                    className="border-primary/30 text-primary hover:bg-primary/10 text-xs h-9 px-2.5 gap-1"
-                  >
-                    <a
-                      href={project.githubUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Open GitHub"
-                    >
-                      <Github size={14} />
-                      <span className="hidden sm:inline">Repo</span>
-                    </a>
-                  </Button>
-
-                  {project.demoUrl && (
-                    <Button
-                      asChild
-                      variant="outline"
-                      size="sm"
-                      className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-xs h-9 px-2.5 gap-1"
-                    >
-                      <a
-                        href={project.demoUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Open Live Demo"
-                      >
-                        <ExternalLink size={14} />
-                        <span className="hidden sm:inline">Demo</span>
-                      </a>
-                    </Button>
-                  )}
-
-                  {/* Toggle Featured */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleToggleFeatured(project)}
-                    className={`text-xs h-9 px-2.5 gap-1.5 ${
-                      project.featured
-                        ? "border-secondary/40 text-secondary hover:bg-secondary/10"
-                        : "border-slate-700 text-slate-400 hover:text-white"
-                    }`}
-                    title={project.featured ? "Remove featured status" : "Make featured"}
-                  >
-                    <Star
-                      size={14}
-                      className={project.featured ? "fill-secondary text-secondary" : ""}
-                    />
-                  </Button>
-
-                  {/* Edit */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleOpenEditDialog(project)}
-                    className="border-primary/40 text-primary hover:bg-primary/20 text-xs h-9 px-2.5 gap-1"
-                  >
-                    <Edit2 size={13} />
-                    <span>Edit</span>
-                  </Button>
-
-                  {/* Delete */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setProjectToDelete(project)}
-                    className="border-destructive/40 text-destructive hover:bg-destructive/15 text-xs h-9 px-2.5 gap-1"
-                  >
-                    <Trash2 size={13} />
-                    <span>Delete</span>
-                  </Button>
+                <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
+                  <Layers size={20} />
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="py-20 text-center bg-card/30 border border-dashed border-primary/30 rounded-xl p-8 max-w-md mx-auto">
-            <h3 className="text-lg font-bold text-white mb-2">
-              No {statusTab !== "all" ? statusTab : ""} projects found
-            </h3>
-            <p className="text-sm text-foreground/70 mb-6">
-              No project records match the active criteria. Add a new project or change your filters.
-            </p>
-            <Button
-              onClick={handleOpenAddDialog}
-              className="bg-primary text-primary-foreground font-semibold text-xs gap-1.5"
-            >
-              <Plus size={16} />
-              Add Project Now
-            </Button>
-          </div>
-        )}
+
+              <div className="bg-card border border-primary/20 p-5 rounded-xl flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                    Pending Review
+                  </p>
+                  <h3 className={`text-2xl sm:text-3xl font-extrabold mt-1 ${statusCounts.pending > 0 ? "text-amber-400" : "text-white"}`}>
+                    {statusCounts.pending}
+                  </h3>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <Clock size={20} />
+                </div>
+              </div>
+
+              <div className="bg-card border border-primary/20 p-5 rounded-xl flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                    Approved (Live)
+                  </p>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-1">
+                    {statusCounts.approved}
+                  </h3>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <CheckCircle2 size={20} />
+                </div>
+              </div>
+
+              <div className="bg-card border border-primary/20 p-5 rounded-xl flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                    Contributors
+                  </p>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-cyan-300 mt-1">
+                    {stats.uniqueAuthors}
+                  </h3>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-300">
+                  <Users size={20} />
+                </div>
+              </div>
+            </div>
+
+            {/* Status Moderation Tabs */}
+            <div className="flex items-center gap-2 mb-6 border-b border-primary/20 pb-3 overflow-x-auto scrollbar-none">
+              <button
+                onClick={() => setStatusTab("all")}
+                className={`text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-all flex items-center gap-2 ${
+                  statusTab === "all"
+                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                    : "text-foreground/70 hover:text-white hover:bg-primary/10"
+                }`}
+              >
+                <span>All Projects</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full font-mono bg-black/20">
+                  {statusCounts.all}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setStatusTab("pending")}
+                className={`text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-all flex items-center gap-2 ${
+                  statusTab === "pending"
+                    ? "bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20"
+                    : "text-foreground/70 hover:text-white hover:bg-amber-500/10"
+                }`}
+              >
+                <Clock size={14} />
+                <span>Pending Review</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                    statusCounts.pending > 0
+                      ? "bg-amber-400 text-slate-950 animate-pulse"
+                      : "bg-slate-800 text-slate-400"
+                  }`}
+                >
+                  {statusCounts.pending}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setStatusTab("approved")}
+                className={`text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-all flex items-center gap-2 ${
+                  statusTab === "approved"
+                    ? "bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20"
+                    : "text-foreground/70 hover:text-white hover:bg-emerald-500/10"
+                }`}
+              >
+                <CheckCircle2 size={14} />
+                <span>Approved</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full font-mono bg-black/20">
+                  {statusCounts.approved}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setStatusTab("rejected")}
+                className={`text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-all flex items-center gap-2 ${
+                  statusTab === "rejected"
+                    ? "bg-rose-500 text-white font-bold shadow-md shadow-rose-500/20"
+                    : "text-foreground/70 hover:text-white hover:bg-rose-500/10"
+                }`}
+              >
+                <XCircle size={14} />
+                <span>Rejected</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full font-mono bg-black/20">
+                  {statusCounts.rejected}
+                </span>
+              </button>
+            </div>
+
+            {/* Filter Toolbar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6 bg-card/60 p-4 rounded-xl border border-primary/20">
+              <div className="relative flex-1">
+                <Search
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+                />
+                <Input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search projects by title, description, or author..."
+                  className="pl-9 bg-background/80 border-primary/30 text-sm h-10"
+                />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="w-44">
+                  <Select
+                    value={categoryFilter}
+                    onValueChange={(val) => setCategoryFilter(val)}
+                  >
+                    <SelectTrigger className="bg-background/80 border-primary/30 text-sm h-10">
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-primary/30 text-foreground">
+                      <SelectItem value="All">All Categories</SelectItem>
+                      <SelectItem value="Web">Web</SelectItem>
+                      <SelectItem value="AI/ML">AI/ML</SelectItem>
+                      <SelectItem value="IoT/Robotics">IoT/Robotics</SelectItem>
+                      <SelectItem value="Tools">Tools</SelectItem>
+                      <SelectItem value="Mobile">Mobile</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Project List */}
+            {isProjectsLoading ? (
+              <div className="py-24 flex flex-col items-center justify-center gap-3">
+                <Spinner className="size-8 text-primary" />
+                <p className="text-sm text-muted-foreground font-mono">
+                  Loading administration records...
+                </p>
+              </div>
+            ) : filteredProjects.length > 0 ? (
+              <div className="space-y-4">
+                {filteredProjects.map((project) => (
+                  <div
+                    key={project.id}
+                    className={`bg-card/75 border rounded-xl p-5 transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-5 group ${
+                      project.status === "pending"
+                        ? "border-amber-500/40 bg-amber-500/5 hover:border-amber-400"
+                        : project.status === "rejected"
+                        ? "border-rose-500/30 bg-rose-500/5"
+                        : "border-primary/20 hover:border-primary/50"
+                    }`}
+                  >
+                    {/* Left: Banner & Info */}
+                    <div className="flex items-start sm:items-center gap-4 min-w-0">
+                      <div className="w-20 h-20 rounded-lg overflow-hidden bg-slate-900 border border-primary/20 shrink-0 relative">
+                        {project.thumbnailUrl ? (
+                          <img
+                            src={project.thumbnailUrl}
+                            alt={project.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-primary/40">
+                            <Code2 size={24} />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                          <h3 className="text-lg font-bold text-white group-hover:text-primary transition-colors truncate">
+                            {project.title}
+                          </h3>
+                          {renderStatusBadge(project.status)}
+                          <Badge
+                            variant="outline"
+                            className="border-primary/40 text-primary text-[10px] px-2 py-0"
+                          >
+                            {project.category}
+                          </Badge>
+                          {project.featured && (
+                            <Badge className="bg-secondary/90 text-secondary-foreground text-[10px] px-2 py-0 font-bold flex items-center gap-1">
+                              <Sparkles size={10} />
+                              Featured
+                            </Badge>
+                          )}
+                        </div>
+
+                        <p className="text-xs text-foreground/70 line-clamp-2 mb-2 max-w-2xl">
+                          {project.description}
+                        </p>
+
+                        {/* Rejection feedback notice if present */}
+                        {project.status === "rejected" && project.moderatorFeedback && (
+                          <div className="mb-2 p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 flex items-start gap-2">
+                            <MessageSquare size={13} className="shrink-0 mt-0.5 text-rose-400" />
+                            <span>
+                              <strong>Feedback provided:</strong> {project.moderatorFeedback}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                          <span>
+                            Author:{" "}
+                            <strong className="text-slate-200">{project.author.name}</strong> (
+                            {project.author.role})
+                          </span>
+                          <span>•</span>
+                          <span>
+                            Submitted:{" "}
+                            {new Date(project.submittedAt || project.createdAt).toLocaleDateString()}
+                          </span>
+                          <span>•</span>
+                          <div className="flex flex-wrap gap-1">
+                            {project.tags.slice(0, 3).map((tag, idx) => (
+                              <span
+                                key={idx}
+                                className="bg-primary/10 text-cyan-300 px-1.5 py-0.2 rounded text-[10px]"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                            {project.tags.length > 3 && (
+                              <span className="text-[10px] text-muted-foreground">
+                                +{project.tags.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Actions */}
+                    <div className="flex flex-wrap items-center gap-2 lg:self-center shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-primary/15">
+                      {/* Moderation Actions for Pending Projects */}
+                      {project.status === "pending" && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() => handleApprove(project)}
+                            className="bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-bold text-xs h-9 px-3 gap-1 shadow-md shadow-emerald-500/20"
+                          >
+                            <Check size={14} />
+                            <span>Approve</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenRejectDialog(project)}
+                            className="border-rose-500/40 text-rose-400 hover:bg-rose-500/10 text-xs h-9 px-3 gap-1"
+                          >
+                            <X size={14} />
+                            <span>Reject</span>
+                          </Button>
+                        </>
+                      )}
+
+                      {/* Re-approve / Update feedback for Rejected Projects */}
+                      {project.status === "rejected" && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() => handleApprove(project)}
+                            className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 text-xs h-9 px-3 gap-1"
+                          >
+                            <Check size={14} />
+                            <span>Re-Approve</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenRejectDialog(project)}
+                            className="border-rose-500/30 text-rose-300 hover:bg-rose-500/10 text-xs h-9 px-2.5 gap-1"
+                          >
+                            <MessageSquare size={13} />
+                            <span>Edit Reason</span>
+                          </Button>
+                        </>
+                      )}
+
+                      {/* External Links */}
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="border-primary/30 text-primary hover:bg-primary/10 text-xs h-9 px-2.5 gap-1"
+                      >
+                        <a
+                          href={project.githubUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Open GitHub"
+                        >
+                          <Github size={14} />
+                          <span className="hidden sm:inline">Repo</span>
+                        </a>
+                      </Button>
+
+                      {project.demoUrl && (
+                        <Button
+                          asChild
+                          variant="outline"
+                          size="sm"
+                          className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-xs h-9 px-2.5 gap-1"
+                        >
+                          <a
+                            href={project.demoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Open Live Demo"
+                          >
+                            <ExternalLink size={14} />
+                            <span className="hidden sm:inline">Demo</span>
+                          </a>
+                        </Button>
+                      )}
+
+                      {/* Toggle Featured */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleToggleFeatured(project)}
+                        className={`text-xs h-9 px-2.5 gap-1.5 ${
+                          project.featured
+                            ? "border-secondary/40 text-secondary hover:bg-secondary/10"
+                            : "border-slate-700 text-slate-400 hover:text-white"
+                        }`}
+                        title={project.featured ? "Remove featured status" : "Make featured"}
+                      >
+                        <Star
+                          size={14}
+                          className={project.featured ? "fill-secondary text-secondary" : ""}
+                        />
+                      </Button>
+
+                      {/* Edit */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenEditDialog(project)}
+                        className="border-primary/40 text-primary hover:bg-primary/20 text-xs h-9 px-2.5 gap-1"
+                      >
+                        <Edit2 size={13} />
+                        <span>Edit</span>
+                      </Button>
+
+                      {/* Delete */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setProjectToDelete(project)}
+                        className="border-destructive/40 text-destructive hover:bg-destructive/15 text-xs h-9 px-2.5 gap-1"
+                      >
+                        <Trash2 size={13} />
+                        <span>Delete</span>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-20 text-center bg-card/30 border border-dashed border-primary/30 rounded-xl p-8 max-w-md mx-auto">
+                <h3 className="text-lg font-bold text-white mb-2">
+                  No {statusTab !== "all" ? statusTab : ""} projects found
+                </h3>
+                <p className="text-sm text-foreground/70 mb-6">
+                  No project records match the active criteria. Add a new project or change your filters.
+                </p>
+                <Button
+                  onClick={handleOpenAddDialog}
+                  className="bg-primary text-primary-foreground font-semibold text-xs gap-1.5"
+                >
+                  <Plus size={16} />
+                  Add Project Now
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
@@ -1181,10 +1156,10 @@ export default function AdminPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
               <div>
                 <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-2">
-                  Community <span className="text-primary">User Directory & Roles</span>
+                  Community <span className="text-primary">Directory & Permissions</span>
                 </h1>
                 <p className="text-muted-foreground text-sm">
-                  View registered contributors and promote or demote platform roles between Student and Admin.
+                  Manage member roles, assign Executive Committee titles (Convenor, Joint Convenor, Secretaries), and grant admin capabilities.
                 </p>
               </div>
               <Button
@@ -1192,11 +1167,25 @@ export default function AdminPage() {
                 size="sm"
                 onClick={fetchUsers}
                 disabled={isLoadingUsers}
-                className="border-primary/40 text-primary hover:bg-primary/10 gap-1.5 text-xs"
+                className="border-primary/40 text-primary hover:bg-primary/10 gap-1.5 text-xs h-9"
               >
                 <RotateCcw size={14} className={isLoadingUsers ? "animate-spin" : ""} />
                 <span>Refresh Directory</span>
               </Button>
+            </div>
+
+            {/* Search Filter for Users */}
+            <div className="bg-card/60 border border-primary/20 p-3 rounded-xl max-w-md">
+              <div className="relative">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Filter by name, email, student ID, batch, or handle..."
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                  className="pl-9 bg-background/80 border-primary/30 text-xs h-9"
+                />
+              </div>
             </div>
 
             <div className="bg-card/80 border border-primary/25 rounded-2xl overflow-hidden shadow-xl">
@@ -1204,62 +1193,107 @@ export default function AdminPage() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-primary/10 border-b border-primary/20 text-muted-foreground font-mono uppercase tracking-wider">
                     <tr>
-                      <th className="p-4">Member</th>
-                      <th className="p-4">Department & Batch</th>
-                      <th className="p-4">GitHub</th>
-                      <th className="p-4">Role</th>
-                      <th className="p-4 text-right">Role Actions</th>
+                      <th className="p-4">Member Identity</th>
+                      <th className="p-4">Student ID & Batch</th>
+                      <th className="p-4">External Profiles</th>
+                      <th className="p-4">Platform Role</th>
+                      <th className="p-4">Executive Committee Role</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-primary/10 text-foreground">
-                    {userList.map((u) => {
+                    {filteredUsers.map((u) => {
                       const isAdminRole = u.role === "admin";
+                      const currentExec = u.executiveRole || "none";
+
                       return (
                         <tr key={u.id} className="hover:bg-primary/5 transition-colors">
-                          <td className="p-4 flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-slate-900 border border-primary/30 overflow-hidden shrink-0">
-                              <img
-                                src={u.avatarUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${u.email}`}
-                                alt={u.name}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div>
-                              <p className="font-bold text-white text-sm">{u.name}</p>
-                              <p className="text-muted-foreground text-[11px] font-mono">{u.email}</p>
-                            </div>
-                          </td>
                           <td className="p-4">
-                            <p className="text-white">{u.department || "CSE"}</p>
-                            <p className="text-muted-foreground text-[11px] font-mono">{u.batch || "City University"}</p>
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-slate-900 border border-primary/30 overflow-hidden shrink-0">
+                                <img
+                                  src={u.avatarUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${u.email}`}
+                                  alt={u.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <Link
+                                    href={`/${u.githubHandle || u.id}`}
+                                    className="font-bold text-white text-sm hover:text-primary transition-colors flex items-center gap-1"
+                                  >
+                                    {u.name}
+                                    <ExternalLink size={12} className="opacity-60" />
+                                  </Link>
+                                  {isAdminRole && (
+                                    <Badge className="bg-primary text-primary-foreground text-[9px] px-1.5 py-0 font-mono">
+                                      Admin
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-muted-foreground text-[11px] font-mono">{u.email}</p>
+                              </div>
+                            </div>
                           </td>
-                          <td className="p-4 font-mono text-cyan-400">
-                            {u.githubHandle ? `@${u.githubHandle}` : "—"}
-                          </td>
+
                           <td className="p-4">
-                            <Badge
-                              className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
-                                isAdminRole
-                                  ? "bg-primary text-primary-foreground"
-                                  : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
-                              }`}
-                            >
-                              {u.role}
-                            </Badge>
+                            <p className="font-mono text-cyan-300 font-semibold">{u.studentId || "—"}</p>
+                            <p className="text-muted-foreground text-[11px]">{u.batch || "City University"} • {u.department || "CSE"}</p>
                           </td>
-                          <td className="p-4 text-right">
-                            <Button
-                              size="sm"
-                              variant={isAdminRole ? "outline" : "default"}
-                              onClick={() => handleToggleUserRole(u.id, u.role)}
-                              className={`text-xs h-8 font-semibold ${
-                                isAdminRole
-                                  ? "border-amber-500/40 text-amber-300 hover:bg-amber-500/15"
-                                  : "bg-primary text-primary-foreground hover:bg-primary/90"
-                              }`}
+
+                          <td className="p-4">
+                            <div className="flex items-center gap-2 font-mono text-[11px]">
+                              {u.githubHandle && (
+                                <span className="text-cyan-400">GH: @{u.githubHandle}</span>
+                              )}
+                              {u.gitlabHandle && (
+                                <span className="text-amber-400">GL: @{u.gitlabHandle}</span>
+                              )}
+                              {!u.githubHandle && !u.gitlabHandle && (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </div>
+                          </td>
+
+                          <td className="p-4">
+                            <Select
+                              value={u.role || "member"}
+                              onValueChange={(val: "member" | "admin") => handleUpdateUserRole(u.id, val)}
                             >
-                              {isAdminRole ? "Revoke Admin" : "Promote to Admin"}
-                            </Button>
+                              <SelectTrigger className="w-32 bg-background/80 border-primary/30 text-xs h-8">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-card border-primary/30 text-foreground">
+                                <SelectItem value="member">
+                                  <span className="flex items-center gap-1 text-emerald-300">
+                                    <UserCheck size={12} /> Member
+                                  </span>
+                                </SelectItem>
+                                <SelectItem value="admin">
+                                  <span className="flex items-center gap-1 text-cyan-300 font-bold">
+                                    <ShieldCheck size={12} /> Admin
+                                  </span>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </td>
+
+                          <td className="p-4">
+                            <Select
+                              value={currentExec}
+                              onValueChange={(val) => handleUpdateExecutiveRole(u.id, val)}
+                            >
+                              <SelectTrigger className="w-56 bg-background/80 border-primary/30 text-xs h-8">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-card border-primary/30 text-foreground">
+                                {EXECUTIVE_ROLE_OPTIONS.map((opt) => (
+                                  <SelectItem key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </td>
                         </tr>
                       );
@@ -1271,6 +1305,56 @@ export default function AdminPage() {
           </div>
         )}
       </main>
+
+      {/* Rejection Feedback Dialog */}
+      <Dialog open={!!rejectingProject} onOpenChange={(open) => !open && setRejectingProject(null)}>
+        <DialogContent className="max-w-md bg-card/95 border-rose-500/40 text-foreground backdrop-blur-xl rounded-2xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
+              <XCircle className="text-rose-400" size={20} />
+              Reject & Provide Contributor Feedback
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Provide constructive guidance on what the author needs to change (e.g. missing demo, incomplete documentation, or broken dependencies).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 mt-3">
+            <div>
+              <p className="text-xs font-semibold text-slate-300 mb-1">
+                Project: <span className="text-white font-bold">{rejectingProject?.title}</span>
+              </p>
+              <textarea
+                rows={4}
+                value={rejectionFeedback}
+                onChange={(e) => setRejectionFeedback(e.target.value)}
+                placeholder="e.g. Please provide an active live deployment link and ensure the README contains setup instructions."
+                className="w-full bg-background/80 border border-primary/30 rounded-lg p-3 text-xs text-foreground resize-y outline-none focus:border-rose-400"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="mt-4 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setRejectingProject(null)}
+              disabled={isSubmittingRejection}
+              className="border-primary/30 text-xs"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmRejection}
+              disabled={isSubmittingRejection}
+              className="bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs"
+            >
+              {isSubmittingRejection ? "Rejecting..." : "Confirm Rejection"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Event Add/Edit Dialog */}
       <Dialog open={eventModalOpen} onOpenChange={setEventModalOpen}>
@@ -1291,7 +1375,7 @@ export default function AdminPage() {
                 required
                 value={eventFormData.title}
                 onChange={(e) => setEventFormData({ ...eventFormData, title: e.target.value })}
-                placeholder="e.g. Next.js 16 Masterclass"
+                placeholder="e.g. Next.js Masterclass"
                 className="bg-background/80 border-primary/30 text-xs"
               />
             </div>

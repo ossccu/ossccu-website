@@ -15,6 +15,7 @@ export const projects = pgTable("projects", {
   authorAvatar: text("author_avatar"),
   featured: boolean("featured").default(false),
   status: text("status").default("pending").notNull(), // 'approved' | 'pending' | 'rejected'
+  moderatorFeedback: text("moderator_feedback"),
   userId: text("user_id"),
   userEmail: text("user_email"),
   submittedAt: timestamp("submitted_at", { withTimezone: true }).defaultNow(),

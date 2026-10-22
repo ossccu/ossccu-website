@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Navbar } from "@/frontend/components/Navbar";
+import { Footer } from "@/frontend/components/Footer";
 import { ProjectFormDialog } from "@/frontend/components/ProjectFormDialog";
 import { useProjects } from "@/frontend/hooks/useProjects";
 import { ProjectInput } from "@/frontend/types/project";
@@ -35,7 +36,7 @@ export default function ContactPage() {
     setIsSubmitting(true);
     await new Promise((r) => setTimeout(r, 600));
     setIsSubmitting(false);
-    toast.success("Thank you! Your message has been sent to the OSS CCU Convenor Committee.");
+    toast.success("Thank you! Your message has been sent to the OSSCCU Convenor Committee.");
     setContactForm({ name: "", email: "", subject: "", message: "" });
   };
 
@@ -53,7 +54,7 @@ export default function ContactPage() {
             <span>GET IN TOUCH</span>
           </div>
           <h1 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight mb-4">
-            Connect with <span className="text-primary">OSS CCU</span>
+            Connect with <span className="text-primary">OSSCCU</span>
           </h1>
           <p className="text-foreground/75 text-base sm:text-lg leading-relaxed">
             Have questions, want to sponsor a minihackathon, or propose an open-source initiative?
@@ -221,13 +222,8 @@ export default function ContactPage() {
         isAdmin={false}
       />
 
-      {/* Footer */}
-      <footer className="border-t border-primary/20 bg-card/40 py-10 mt-auto">
-        <div className="container flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Open Source Software Community at City University (OSS CCU).</p>
-          <p>City University, Savar, Dhaka.</p>
-        </div>
-      </footer>
+      {/* Global Footer */}
+      <Footer />
     </div>
   );
 }

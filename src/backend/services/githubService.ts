@@ -101,3 +101,90 @@ export async function fetchGitHubStats(url: string): Promise<GitHubStats> {
     return { stars: 0, forks: 0, loaded: false };
   }
 }
+
+export interface GitHubUserProfileStats {
+  publicRepos: number;
+  followers: number;
+  following: number;
+  bio?: string;
+  avatarUrl?: string;
+  topLanguages: { name: string; percentage: number; color?: string }[];
+}
+
+export async function fetchGitHubUserProfile(username: string): Promise<GitHubUserProfileStats | null> {
+  const clean = username.trim().replace(/^@/, "");
+  if (!clean) return null;
+
+  try {
+    const res = await fetch(`https://api.github.com/users/${clean}`, {
+      headers: {
+        Accept: "application/vnd.github.v3+json",
+        "User-Agent": "OSSCCU-Platform/1.0",
+      },
+    });
+
+    if (!res.ok) return null;
+    const data = await res.json();
+
+    // Fetch user's public repos to compute top languages
+    let topLanguages: { name: string; percentage: number; color?: string }[] = [];
+    try {
+      const reposRes = await fetch(`https://api.github.com/users/${clean}/repos?per_page=30&sort=pushed`, {
+        headers: {
+          Accept: "application/vnd.github.v3+json",
+          "User-Agent": "OSSCCU-Platform/1.0",
+        },
+      });
+
+      if (reposRes.ok) {
+        const reposData = await reposRes.json();
+        if (Array.isArray(reposData)) {
+          const counts: Record<string, number> = {};
+          let total = 0;
+          for (const repo of reposData) {
+            if (repo.language) {
+              counts[repo.language] = (counts[repo.language] || 0) + 1;
+              total += 1;
+            }
+          }
+
+          const colors: Record<string, string> = {
+            TypeScript: "#3178c6",
+            JavaScript: "#f1e05a",
+            Python: "#3572A5",
+            "C++": "#f34b7d",
+            C: "#555555",
+            HTML: "#e34c26",
+            CSS: "#563d7c",
+            Rust: "#dea584",
+            Go: "#00ADD8",
+          };
+
+          topLanguages = Object.entries(counts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 4)
+            .map(([name, count]) => ({
+              name,
+              percentage: total > 0 ? Math.round((count / total) * 100) : 0,
+              color: colors[name] || "#00d9ff",
+            }));
+        }
+      }
+    } catch {
+      // Repos lookup omitted
+    }
+
+    return {
+      publicRepos: data.public_repos || 0,
+      followers: data.followers || 0,
+      following: data.following || 0,
+      bio: data.bio || undefined,
+      avatarUrl: data.avatar_url || undefined,
+      topLanguages,
+    };
+  } catch (err) {
+    console.debug(`GitHub user stats error for ${clean}:`, err);
+    return null;
+  }
+}
+

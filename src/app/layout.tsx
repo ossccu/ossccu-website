@@ -7,9 +7,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "OSS CCU - Open Source Software Community at City University",
+  title: "OSSCCU - Open Source Software Community at City University",
   description:
-    "Join the Open Source Software Community at City University (OSS CCU). Collaborate, build, and ship amazing production-grade open-source software together.",
+    "Join the Open Source Software Community at City University (OSSCCU). Collaborate, build, and ship amazing production-grade open-source software together.",
   icons: {
     icon: "/logo.png",
     apple: "/logo.png",

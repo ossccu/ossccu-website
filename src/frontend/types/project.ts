@@ -21,6 +21,7 @@ export interface Project {
   demoUrl?: string;
   featured?: boolean;
   status: ProjectStatus;
+  moderatorFeedback?: string;
   userId?: string;
   userEmail?: string;
   submittedAt?: string;
@@ -30,6 +31,7 @@ export interface Project {
 
 export type ProjectInput = Omit<Project, "id" | "createdAt" | "updatedAt"> & {
   status?: ProjectStatus;
+  moderatorFeedback?: string;
   submittedAt?: string;
   userId?: string;
   userEmail?: string;

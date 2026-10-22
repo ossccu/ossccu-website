@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Navbar } from "@/frontend/components/Navbar";
+import { Footer } from "@/frontend/components/Footer";
 import { EventsSection } from "@/frontend/components/EventsSection";
 import { ProjectFormDialog } from "@/frontend/components/ProjectFormDialog";
 import { useProjects } from "@/frontend/hooks/useProjects";
@@ -35,7 +36,7 @@ export default function EventsPage() {
           </h1>
           <p className="text-foreground/75 text-sm sm:text-base leading-relaxed mb-6">
             Join hands-on coding workshops, 48-hour minihackathons, and tech meetups organized by
-            the Open Source Software Community at City University (OSS CCU).
+            the Open Source Software Community at City University (OSSCCU).
           </p>
           <div className="flex justify-center gap-3">
             <Button
@@ -64,13 +65,8 @@ export default function EventsPage() {
         isAdmin={false}
       />
 
-      {/* Footer */}
-      <footer className="border-t border-primary/20 bg-card/40 py-10 mt-auto">
-        <div className="container flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Open Source Software Community at City University (OSS CCU).</p>
-          <p>Fostering developer culture & open collaboration.</p>
-        </div>
-      </footer>
+      {/* Global Footer */}
+      <Footer />
     </div>
   );
 }

@@ -322,6 +322,7 @@ function mapDbRowToProject(row: typeof projects.$inferSelect): Project {
     },
     featured: Boolean(row.featured),
     status: (row.status || "approved") as Project["status"],
+    moderatorFeedback: row.moderatorFeedback || undefined,
     userId: row.userId || undefined,
     userEmail: row.userEmail || undefined,
     submittedAt: row.submittedAt ? row.submittedAt.toISOString() : undefined,
@@ -521,6 +522,7 @@ export const projectService = {
             authorAvatar: input.author.avatarUrl || null,
             featured: Boolean(input.featured),
             status: input.status || "pending",
+            moderatorFeedback: input.moderatorFeedback || null,
             userId: input.userId || null,
             userEmail: input.userEmail || null,
           })
@@ -563,6 +565,7 @@ export const projectService = {
             ...(updates.author?.avatarUrl !== undefined && { authorAvatar: updates.author.avatarUrl || null }),
             ...(updates.featured !== undefined && { featured: updates.featured }),
             ...(updates.status && { status: updates.status }),
+            ...(updates.moderatorFeedback !== undefined && { moderatorFeedback: updates.moderatorFeedback || null }),
             ...(updates.userId !== undefined && { userId: updates.userId || null }),
             ...(updates.userEmail !== undefined && { userEmail: updates.userEmail || null }),
             updatedAt: new Date(),

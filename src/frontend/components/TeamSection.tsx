@@ -100,7 +100,7 @@ export function TeamSection() {
         </h2>
         <p className="text-foreground/75 text-sm sm:text-base leading-relaxed">
           The official leadership body and batch representatives steering the Open Source
-          Software Community at City University (OSS CCU).
+          Software Community at City University (OSSCCU).
         </p>
       </div>
 

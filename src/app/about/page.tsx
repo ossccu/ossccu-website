@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Navbar } from "@/frontend/components/Navbar";
+import { Footer } from "@/frontend/components/Footer";
 import { TeamSection } from "@/frontend/components/TeamSection";
 import { ContributorSection } from "@/frontend/components/ContributorSection";
 import { ProjectFormDialog } from "@/frontend/components/ProjectFormDialog";
@@ -31,10 +32,10 @@ export default function AboutPage() {
             <span>WHO WE ARE</span>
           </div>
           <h1 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight mb-6">
-            About <span className="text-primary">OSS CCU</span>
+            About <span className="text-primary">OSSCCU</span>
           </h1>
           <p className="text-foreground/80 text-base sm:text-lg leading-relaxed">
-            The <strong>Open Source Software Community at City University (OSS CCU)</strong> is a student-led
+            The <strong>Open Source Software Community at City University (OSSCCU)</strong> is a student-led
             ecosystem of developers, system tinkerer and designers building production-grade software in public.
           </p>
         </div>
@@ -125,13 +126,8 @@ export default function AboutPage() {
         isAdmin={false}
       />
 
-      {/* Footer */}
-      <footer className="border-t border-primary/20 bg-card/40 py-10 mt-auto">
-        <div className="container flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Open Source Software Community at City University (OSS CCU).</p>
-          <p>Convenor Committee & Student Contributors.</p>
-        </div>
-      </footer>
+      {/* Global Footer */}
+      <Footer />
     </div>
   );
 }

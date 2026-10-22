@@ -85,7 +85,7 @@ export function Navbar({ onOpenSubmitModal }: NavbarProps) {
             <div className="w-9 h-9 rounded-xl bg-card border border-primary/40 flex items-center justify-center p-1 group-hover:scale-105 group-hover:border-primary transition-all shadow-[0_0_15px_rgba(0,217,255,0.2)] overflow-hidden">
               <img
                 src="/logo.png"
-                alt="OSS CCU Logo"
+                alt="OSSCCU Logo"
                 className="w-full h-full object-contain"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = "none";
@@ -94,7 +94,7 @@ export function Navbar({ onOpenSubmitModal }: NavbarProps) {
             </div>
             <div className="flex flex-col">
               <span className="text-xl font-extrabold text-white tracking-wider flex items-center gap-1.5 font-mono">
-                OSS <span className="text-primary">CCU</span>
+                OSS<span className="text-primary">CCU</span>
                 <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               </span>
               <span className="text-[10px] tracking-widest uppercase text-muted-foreground hidden sm:inline">

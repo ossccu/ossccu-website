@@ -114,7 +114,7 @@ export function ContributorSection() {
             <span>COMMUNITY CONTRIBUTORS</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-3">
-            The Builders of <span className="text-primary">OSS CCU</span>
+            The Builders of <span className="text-primary">OSSCCU</span>
           </h2>
           <p className="text-foreground/75 text-sm sm:text-base leading-relaxed">
             Meet the students driving open innovation across City University by authoring repositories,

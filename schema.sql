@@ -1,12 +1,15 @@
--- OSSCCU Projects Table Schema
+-- OSSCCU Database Schema & Supabase Configuration
 -- Execute in Supabase SQL Editor or PostgreSQL database
 
+-- -------------------------------------------------------------
+-- 1. Projects Table
+-- -------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS projects (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   description TEXT NOT NULL,
   category TEXT NOT NULL,
-  tags TEXT[] NOT NULL,
+  tags TEXT[] NOT NULL DEFAULT '{}',
   github_url TEXT NOT NULL,
   demo_url TEXT,
   cover_image TEXT,
@@ -16,59 +19,77 @@ CREATE TABLE IF NOT EXISTS projects (
   author_avatar TEXT,
   featured BOOLEAN DEFAULT false,
   status TEXT DEFAULT 'pending',
-  user_id UUID,
+  moderator_feedback TEXT,
+  user_id TEXT,
   user_email TEXT,
   submitted_at TIMESTAMPTZ DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Row Level Security (RLS) policies
+-- Row Level Security (RLS) policies for projects
 ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 
--- Allow public read access to approved projects
 CREATE POLICY "Allow public read access for approved projects"
-  ON projects
-  FOR SELECT
+  ON projects FOR SELECT
   USING (status = 'approved');
 
--- Allow users to view their own projects even if pending
 CREATE POLICY "Allow users to view own projects"
-  ON projects
-  FOR SELECT
-  USING (auth.uid() = user_id);
+  ON projects FOR SELECT
+  USING (auth.uid()::text = user_id);
 
--- Allow public submissions / logged-in user insertions with pending status
 CREATE POLICY "Allow public submissions"
-  ON projects
-  FOR INSERT
+  ON projects FOR INSERT
   WITH CHECK (status = 'pending');
 
--- Allow owners to update their own pending submissions
 CREATE POLICY "Allow owners to update own pending projects"
-  ON projects
-  FOR UPDATE
-  USING (auth.uid() = user_id AND status = 'pending');
+  ON projects FOR UPDATE
+  USING (auth.uid()::text = user_id AND status = 'pending');
 
--- Allow full access for service role or admin
-CREATE POLICY "Allow full access for service role"
-  ON projects
-  FOR ALL
+CREATE POLICY "Allow full access for service role or admin"
+  ON projects FOR ALL
   USING (true);
 
 -- -------------------------------------------------------------
--- Users Table Schema & Auth Synchronization
+-- 2. Events Table
 -- -------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  date TEXT NOT NULL,
+  time TEXT,
+  venue TEXT,
+  type TEXT NOT NULL,
+  status TEXT DEFAULT 'upcoming',
+  registration_url TEXT,
+  banner_image TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
+-- -------------------------------------------------------------
+-- 3. Users Table Schema & Extended Profiles
+-- -------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.users (
   id TEXT PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
-  avatar_url TEXT,
-  github_handle TEXT,
-  role TEXT DEFAULT 'student',
-  department TEXT DEFAULT 'Dept. of Computer Science & Engineering',
+  student_id TEXT,
   batch TEXT DEFAULT 'City University Student',
+  department TEXT DEFAULT 'Dept. of Computer Science & Engineering',
+  avatar_url TEXT,
+  role TEXT DEFAULT 'member',
+  executive_role TEXT,
+  github_handle TEXT,
+  gitlab_handle TEXT,
+  linkedin_url TEXT,
+  codeforces_handle TEXT,
+  leetcode_handle TEXT,
+  hackerrank_handle TEXT,
+  codechef_handle TEXT,
+  portfolio_url TEXT,
+  pinned_project_ids TEXT[] DEFAULT '{}',
+  bookmarked_project_ids TEXT[] DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -82,7 +103,9 @@ CREATE POLICY "Allow authenticated user upsert own profile"
   ON public.users FOR ALL
   USING (true);
 
--- SQL Trigger Fallback: Synchronize Supabase auth.users to public.users
+-- -------------------------------------------------------------
+-- 4. SQL Trigger: Synchronize Supabase auth.users to public.users
+-- -------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -93,7 +116,7 @@ BEGIN
     COALESCE(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
     COALESCE(new.raw_user_meta_data->>'avatar_url', ''),
     COALESCE(new.raw_user_meta_data->>'user_name', ''),
-    'student'
+    'member'
   )
   ON CONFLICT (id) DO UPDATE
   SET email = EXCLUDED.email,
@@ -107,3 +130,19 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- -------------------------------------------------------------
+-- 5. Supabase Storage for Profile Photos (avatars bucket)
+-- -------------------------------------------------------------
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Public Read Avatars" ON storage.objects
+  FOR SELECT USING (bucket_id = 'avatars');
+
+CREATE POLICY "User Upload Avatar" ON storage.objects
+  FOR INSERT WITH CHECK (
+    bucket_id = 'avatars' AND 
+    auth.uid()::text = (storage.foldername(name))[1]
+  );

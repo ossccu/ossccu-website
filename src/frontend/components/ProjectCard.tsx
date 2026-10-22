@@ -5,6 +5,7 @@ import { Project, GitHubStats } from "@/frontend/types/project";
 import { Badge } from "@/frontend/components/ui/badge";
 import { Button } from "@/frontend/components/ui/button";
 import { fetchGitHubStats } from "@/backend/services/githubService";
+import { useAuth } from "@/frontend/contexts/AuthContext";
 import {
   Github,
   ExternalLink,
@@ -15,6 +16,7 @@ import {
   GitFork,
   Copy,
   Check,
+  Bookmark,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,9 +25,12 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project }: ProjectCardProps) {
+  const { user, toggleBookmark } = useAuth();
   const [imgError, setImgError] = useState(false);
   const [copied, setCopied] = useState(false);
   const [ghStats, setGhStats] = useState<GitHubStats | null>(null);
+
+  const isBookmarked = Boolean(user?.bookmarkedProjectIds?.includes(project.id));
 
   useEffect(() => {
     let isMounted = true;
@@ -94,20 +99,39 @@ export function ProjectCard({ project }: ProjectCardProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-card via-card/25 to-transparent pointer-events-none" />
 
         {/* Category & Badges Overlay */}
-        <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 pointer-events-none">
+        <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
           <Badge
             variant="outline"
-            className="bg-background/85 backdrop-blur-md border-primary/40 text-primary text-[11px] font-semibold px-2.5 py-0.5 shadow-sm"
+            className="bg-background/85 backdrop-blur-md border-primary/40 text-primary text-[11px] font-semibold px-2.5 py-0.5 shadow-sm pointer-events-none"
           >
             {project.category}
           </Badge>
 
           <div className="flex items-center gap-1.5">
             {project.featured && (
-              <Badge className="bg-secondary text-secondary-foreground text-[11px] font-bold px-2 py-0.5 flex items-center gap-1 shadow-md">
+              <Badge className="bg-secondary text-secondary-foreground text-[11px] font-bold px-2 py-0.5 flex items-center gap-1 shadow-md pointer-events-none">
                 <Sparkles size={11} />
                 Featured
               </Badge>
+            )}
+
+            {user && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleBookmark(project.id);
+                }}
+                className={`p-1.5 rounded-lg backdrop-blur-md border transition-all ${
+                  isBookmarked
+                    ? "bg-amber-500/25 border-amber-500/60 text-amber-300"
+                    : "bg-background/85 border-primary/30 text-muted-foreground hover:text-white hover:border-primary"
+                }`}
+                title={isBookmarked ? "Remove Bookmark" : "Bookmark Project"}
+              >
+                <Bookmark size={13} className={isBookmarked ? "fill-amber-400 text-amber-400" : ""} />
+              </button>
             )}
           </div>
         </div>

@@ -14,15 +14,15 @@ export async function GET() {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, role } = body;
-    if (!userId || !role || (role !== "student" && role !== "admin")) {
-      return NextResponse.json({ error: "Invalid role payload" }, { status: 400 });
+    const { userId, ...updates } = body;
+    if (!userId) {
+      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
 
-    const success = await userService.toggleRole(userId, role);
-    return NextResponse.json({ success, userId, role }, { status: 200 });
+    const updated = await userService.updateUser(userId, updates);
+    return NextResponse.json({ success: true, user: updated }, { status: 200 });
   } catch (error) {
     console.error("PATCH /api/users error:", error);
-    return NextResponse.json({ error: "Failed to update user role" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
   }
 }
