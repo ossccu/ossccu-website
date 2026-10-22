@@ -240,7 +240,7 @@ export default function Home() {
                     📍 {evt.venue || "City University Main Campus"}
                   </span>
                   <Button asChild size="sm" className="bg-primary text-primary-foreground font-bold text-xs neon-button">
-                    <Link href="/events">Details & RSVP</Link>
+                    <Link href="/events">Details</Link>
                   </Button>
                 </div>
               </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { ShieldCheck, Code2, Users, Star, Award, Layers } from "lucide-react";
+import { ShieldCheck, Code2, Users, Star, Award, Layers, Github, Linkedin } from "lucide-react";
 import { Badge } from "@/frontend/components/ui/badge";
 
 interface CoreLeader {
@@ -178,7 +178,7 @@ export function TeamSection() {
                         className="w-8 h-8 rounded-lg bg-background/80 hover:bg-primary/20 border border-primary/30 flex items-center justify-center text-foreground hover:text-primary transition-colors"
                         title="GitHub Profile"
                       >
-                        <Code2 size={14} />
+                        <Github size={14} />
                       </a>
                     )}
                     {leader.linkedinUrl && (
@@ -189,7 +189,7 @@ export function TeamSection() {
                         className="w-8 h-8 rounded-lg bg-background/80 hover:bg-secondary/20 border border-secondary/30 flex items-center justify-center text-foreground hover:text-secondary transition-colors"
                         title="LinkedIn Profile"
                       >
-                        <Star size={14} />
+                        <Linkedin size={14} />
                       </a>
                     )}
                   </div>

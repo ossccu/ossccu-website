@@ -55,9 +55,9 @@ export function Navbar({ onOpenSubmitModal }: NavbarProps) {
 
   const navLinks = [
     { label: "Home", href: "/" },
+    { label: "About", href: "/about" },
     { label: "Projects", href: "/projects" },
     { label: "Events", href: "/events" },
-    { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
   ];
 
@@ -82,7 +82,7 @@ export function Navbar({ onOpenSubmitModal }: NavbarProps) {
             href="/"
             className="flex items-center gap-3 font-bold tracking-wider group focus:outline-none"
           >
-            <div className="w-9 h-9 rounded-xl bg-card border border-primary/40 flex items-center justify-center p-1 group-hover:scale-105 group-hover:border-primary transition-all shadow-[0_0_15px_rgba(0,217,255,0.2)] overflow-hidden">
+            <div className="w-6 h-6 md:w-9 md:h-9 lg:w-12 lg:h-12 flex items-center justify-center group-hover:scale-105 group-hover:border-primary transition-all overflow-hidden">
               <img
                 src="/logo.png"
                 alt="OSSCCU Logo"
@@ -93,12 +93,12 @@ export function Navbar({ onOpenSubmitModal }: NavbarProps) {
               />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-extrabold text-white tracking-wider flex items-center gap-1.5 font-mono">
-                OSS<span className="text-primary">CCU</span>
-                <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xl font-extrabold text-white tracking-wider font-mono">
+                OSSC<span className="text-primary">CU</span>
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 mb-0.5 ml-1 animate-pulse" />
               </span>
-              <span className="text-[10px] tracking-widest uppercase text-muted-foreground hidden sm:inline">
-                City University Open Source
+              <span className="text-[8px] tracking-widest uppercase text-muted-foreground hidden sm:inline">
+                Open Source Software Community City University
               </span>
             </div>
           </Link>
@@ -116,7 +116,7 @@ export function Navbar({ onOpenSubmitModal }: NavbarProps) {
                   href={link.href}
                   className={`text-sm font-medium tracking-wide py-1 border-b-2 transition-all ${
                     isActive
-                      ? "text-primary border-primary font-bold shadow-[0_2px_10px_rgba(0,217,255,0.3)]"
+                      ? "text-primary border-primary font-bold"
                       : "text-foreground/80 border-transparent hover:text-white hover:border-primary/60"
                   }`}
                 >
@@ -164,7 +164,7 @@ export function Navbar({ onOpenSubmitModal }: NavbarProps) {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-56 bg-card/95 border-primary/30 backdrop-blur-xl p-1.5 shadow-2xl text-foreground"
+                  className="w-56 bg-card/65 border-primary/30 backdrop-blur-xl p-1.5 shadow-2xl text-foreground"
                 >
                   <DropdownMenuLabel className="p-2">
                     <p className="text-xs font-bold text-white truncate">{user.name}</p>
@@ -221,7 +221,7 @@ export function Navbar({ onOpenSubmitModal }: NavbarProps) {
               <Button
                 size="sm"
                 onClick={() => setAuthModalOpen(true)}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs tracking-wide shadow-md shadow-primary/20 gap-1.5 neon-button"
+                className="bg-primary hover:bg-primary/60 text-primary-foreground font-semibold text-xs tracking-wide shadow-md shadow-primary/20 gap-1.5 neon-button"
               >
                 <LogIn size={15} />
                 Sign In
@@ -266,7 +266,7 @@ export function Navbar({ onOpenSubmitModal }: NavbarProps) {
 
         {/* Mobile Drawer Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-primary/20 bg-background/95 backdrop-blur-xl px-4 py-5 shadow-2xl animate-in slide-in-from-top duration-200">
+          <div className="md:hidden border-t border-primary/20 bg-background/65 backdrop-blur-xl px-4 py-5 shadow-2xl animate-in slide-in-from-top duration-200">
             {user && (
               <div className="mb-4 pb-3 border-b border-primary/20 flex items-center gap-3">
                 {user.avatarUrl ? (
@@ -293,7 +293,7 @@ export function Navbar({ onOpenSubmitModal }: NavbarProps) {
                   key={link.label}
                   href={link.href}
                   onClick={handleNavClick}
-                  className="text-base font-medium px-3 py-2 rounded-md hover:bg-primary/10 text-foreground/90 hover:text-primary transition-colors"
+                  className="text-base font-medium px-3 py-2 rounded-md hover:bg-primary/10 text-foreground/60 hover:text-primary transition-colors"
                 >
                   {link.label}
                 </Link>

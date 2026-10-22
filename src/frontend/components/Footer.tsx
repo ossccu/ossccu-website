@@ -17,7 +17,7 @@ export function Footer() {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <span className="text-xl font-extrabold text-white tracking-wider font-mono">
-                OSS<span className="text-primary">CCU</span>
+                OSSC<span className="text-primary">CU</span>
               </span>
             </div>
             <p className="text-foreground/70 text-xs leading-relaxed">
@@ -78,22 +78,22 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://discord.gg/ossccu"
+                  href="https://www.facebook.com/groups/ossccu"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-secondary transition-colors"
                 >
-                  Discord Community
+                  Facebook Group  
                 </a>
               </li>
               <li>
                 <a
-                  href="https://twitter.com/ossccu"
+                  href="https://chat.whatsapp.com/GUsUkzADQz7BILwjfs1utj"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-primary transition-colors"
                 >
-                  Twitter / X
+                  WhatsApp Group
                 </a>
               </li>
             </ul>
