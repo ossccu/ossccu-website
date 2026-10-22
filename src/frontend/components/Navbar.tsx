@@ -15,7 +15,6 @@ import {
   DropdownMenuTrigger,
 } from "@/frontend/components/ui/dropdown-menu";
 import {
-  Code2,
   Menu,
   X,
   PlusCircle,
@@ -38,7 +37,6 @@ export function Navbar({ onOpenSubmitModal }: NavbarProps) {
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const pathname = usePathname();
-  const isHomePage = pathname === "/";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -56,28 +54,20 @@ export function Navbar({ onOpenSubmitModal }: NavbarProps) {
   }, []);
 
   const navLinks = [
-    { label: "Home", href: isHomePage ? "#home" : "/#home" },
-    { label: "Projects", href: isHomePage ? "#projects" : "/#projects" },
-    { label: "Events", href: isHomePage ? "#events" : "/#events" },
-    { label: "About", href: isHomePage ? "#about" : "/#about" },
-    { label: "Contact", href: isHomePage ? "#contact" : "/#contact" },
+    { label: "Home", href: "/" },
+    { label: "Projects", href: "/projects" },
+    { label: "Events", href: "/events" },
+    { label: "About", href: "/about" },
+    { label: "Contact", href: "/contact" },
   ];
 
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    if (isHomePage && href.startsWith("#")) {
-      e.preventDefault();
-      const targetId = href.replace("#", "");
-      const elem = document.getElementById(targetId);
-      if (elem) {
-        elem.scrollIntoView({ behavior: "smooth" });
-      }
-    }
+  const handleNavClick = () => {
     setMobileMenuOpen(false);
   };
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-primary/20 transition-all">
+      <header className="sticky top-0 z-50 w-full bg-background/85 backdrop-blur-md border-b border-primary/20 transition-all">
         {/* Subtle Top Scroll Progress Bar */}
         <div className="absolute top-0 left-0 right-0 h-0.5 sm:h-1 bg-transparent overflow-hidden pointer-events-none">
           <div
@@ -87,17 +77,24 @@ export function Navbar({ onOpenSubmitModal }: NavbarProps) {
         </div>
 
         <div className="container flex items-center justify-between h-16">
-          {/* Brand */}
+          {/* Brand & Logo */}
           <Link
             href="/"
-            className="flex items-center gap-2.5 font-bold tracking-wider group focus:outline-none"
+            className="flex items-center gap-3 font-bold tracking-wider group focus:outline-none"
           >
-            <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/40 flex items-center justify-center text-primary group-hover:scale-105 group-hover:border-primary transition-all shadow-[0_0_15px_rgba(0,217,255,0.2)]">
-              <Code2 size={20} className="text-primary group-hover:rotate-6 transition-transform" />
+            <div className="w-9 h-9 rounded-xl bg-card border border-primary/40 flex items-center justify-center p-1 group-hover:scale-105 group-hover:border-primary transition-all shadow-[0_0_15px_rgba(0,217,255,0.2)] overflow-hidden">
+              <img
+                src="/logo.png"
+                alt="OSS CCU Logo"
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-extrabold text-white tracking-wider flex items-center gap-1.5">
-                OSS<span className="text-primary">CCU</span>
+              <span className="text-xl font-extrabold text-white tracking-wider flex items-center gap-1.5 font-mono">
+                OSS <span className="text-primary">CCU</span>
                 <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               </span>
               <span className="text-[10px] tracking-widest uppercase text-muted-foreground hidden sm:inline">
@@ -108,16 +105,25 @@ export function Navbar({ onOpenSubmitModal }: NavbarProps) {
 
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-7">
-            {navLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                onClick={(e) => handleNavClick(e, link.href)}
-                className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors tracking-wide py-1 border-b-2 border-transparent hover:border-primary/60"
-              >
-                {link.label}
-              </a>
-            ))}
+            {navLinks.map((link) => {
+              const isActive =
+                link.href === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(link.href);
+              return (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className={`text-sm font-medium tracking-wide py-1 border-b-2 transition-all ${
+                    isActive
+                      ? "text-primary border-primary font-bold shadow-[0_2px_10px_rgba(0,217,255,0.3)]"
+                      : "text-foreground/80 border-transparent hover:text-white hover:border-primary/60"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* User Controls & CTAs */}
@@ -188,17 +194,17 @@ export function Navbar({ onOpenSubmitModal }: NavbarProps) {
                     </DropdownMenuItem>
                   )}
 
-                  <DropdownMenuItem asChild className="cursor-pointer text-xs focus:bg-primary/15 focus:text-primary">
-                    <Link href="/admin" className="flex items-center gap-2 w-full py-1.5">
-                      <ShieldCheck size={15} />
-                      <span>Admin Console</span>
-                      {isAdmin && (
+                  {isAdmin && (
+                    <DropdownMenuItem asChild className="cursor-pointer text-xs focus:bg-primary/15 focus:text-primary">
+                      <Link href="/admin" className="flex items-center gap-2 w-full py-1.5">
+                        <ShieldCheck size={15} />
+                        <span>Admin Console</span>
                         <span className="ml-auto text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 rounded">
                           Staff
                         </span>
-                      )}
-                    </Link>
-                  </DropdownMenuItem>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
 
                   <DropdownMenuSeparator className="bg-primary/20" />
 
@@ -283,14 +289,14 @@ export function Navbar({ onOpenSubmitModal }: NavbarProps) {
 
             <nav className="flex flex-col gap-2">
               {navLinks.map((link) => (
-                <a
+                <Link
                   key={link.label}
                   href={link.href}
-                  onClick={(e) => handleNavClick(e, link.href)}
+                  onClick={handleNavClick}
                   className="text-base font-medium px-3 py-2 rounded-md hover:bg-primary/10 text-foreground/90 hover:text-primary transition-colors"
                 >
                   {link.label}
-                </a>
+                </Link>
               ))}
 
               <div className="pt-3 border-t border-primary/20 flex flex-col gap-2">
@@ -321,15 +327,17 @@ export function Navbar({ onOpenSubmitModal }: NavbarProps) {
                   </Button>
                 )}
 
-                <Button
-                  asChild
-                  className="w-full justify-center bg-primary text-primary-foreground font-semibold gap-2"
-                >
-                  <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
-                    <ShieldCheck size={16} />
-                    Admin Console
-                  </Link>
-                </Button>
+                {isAdmin && (
+                  <Button
+                    asChild
+                    className="w-full justify-center bg-primary text-primary-foreground font-semibold gap-2"
+                  >
+                    <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
+                      <ShieldCheck size={16} />
+                      Admin Console
+                    </Link>
+                  </Button>
+                )}
 
                 {user && (
                   <Button

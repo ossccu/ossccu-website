@@ -36,6 +36,27 @@ const DEMO_USERS: Record<"contributor" | "admin", AuthUser> = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+async function syncUserToDatabase(user: AuthUser) {
+  try {
+    await fetch("/api/users/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar_url: user.avatarUrl,
+        github_handle: user.githubUsername,
+        role: user.isAdmin ? "admin" : "student",
+        department: user.department,
+        batch: user.batch,
+      }),
+    });
+  } catch (e) {
+    console.warn("Post-auth sync to public.users failed:", e);
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email.endsWith("@ossccu.org") ||
               Boolean(meta.is_admin);
 
-            setUser({
+            const mappedUser: AuthUser = {
               id: rawUser.id,
               email,
               name: meta.full_name || meta.name || email.split("@")[0],
@@ -69,7 +90,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               department: meta.department || "Computer Science & Engineering",
               batch: meta.batch || "Student Member",
               isAdmin,
-            });
+            };
+            setUser(mappedUser);
+            syncUserToDatabase(mappedUser);
             setIsLoading(false);
             return;
           }
@@ -90,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email.endsWith("@ossccu.org") ||
               Boolean(meta.is_admin);
 
-            setUser({
+            const mappedUser: AuthUser = {
               id: rawUser.id,
               email,
               name: meta.full_name || meta.name || email.split("@")[0],
@@ -99,7 +122,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               department: meta.department || "Computer Science & Engineering",
               batch: meta.batch || "Student Member",
               isAdmin,
-            });
+            };
+            setUser(mappedUser);
+            syncUserToDatabase(mappedUser);
           } else {
             setUser(null);
           }
@@ -131,6 +156,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const saveLocalUser = (authUser: AuthUser | null) => {
     setUser(authUser);
+    if (authUser) {
+      syncUserToDatabase(authUser);
+    }
     if (typeof window !== "undefined") {
       if (authUser) {
         localStorage.setItem(LOCAL_STORAGE_AUTH_KEY, JSON.stringify(authUser));

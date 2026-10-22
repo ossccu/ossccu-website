@@ -1,7 +1,7 @@
 import { CommunityEvent, CommunityEventInput } from "@/frontend/types/event";
 import { db, isDbConnected } from "@/database";
 import { events } from "@/database/schema";
-import { desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export const DEFAULT_EVENTS: CommunityEvent[] = [
   {
@@ -166,5 +166,50 @@ export const eventService = {
     const current = await this.getEvents();
     saveEventsToStorage([newEvent, ...current]);
     return newEvent;
+  },
+
+  async updateEvent(id: string, input: Partial<CommunityEventInput>): Promise<CommunityEvent | null> {
+    if (isDbConnected && db) {
+      try {
+        const updateData: any = {};
+        if (input.title !== undefined) updateData.title = input.title;
+        if (input.description !== undefined) updateData.description = input.description;
+        if (input.date !== undefined) updateData.date = input.date;
+        if (input.time !== undefined) updateData.time = input.time || null;
+        if (input.venue !== undefined) updateData.venue = input.venue || null;
+        if (input.type !== undefined) updateData.type = input.type;
+        if (input.status !== undefined) updateData.status = input.status;
+        if (input.registrationUrl !== undefined) updateData.registrationUrl = input.registrationUrl || null;
+        if (input.bannerImage !== undefined) updateData.bannerImage = input.bannerImage || null;
+
+        await db.update(events).set(updateData).where(eq(events.id, id));
+      } catch (err) {
+        console.warn("Drizzle updateEvent failed:", err);
+      }
+    }
+
+    const current = await this.getEvents();
+    const idx = current.findIndex((e) => e.id === id);
+    if (idx >= 0) {
+      current[idx] = { ...current[idx], ...input };
+      saveEventsToStorage([...current]);
+      return current[idx];
+    }
+    return null;
+  },
+
+  async deleteEvent(id: string): Promise<boolean> {
+    if (isDbConnected && db) {
+      try {
+        await db.delete(events).where(eq(events.id, id));
+      } catch (err) {
+        console.warn("Drizzle deleteEvent failed:", err);
+      }
+    }
+
+    const current = await this.getEvents();
+    const filtered = current.filter((e) => e.id !== id);
+    saveEventsToStorage(filtered);
+    return true;
   },
 };

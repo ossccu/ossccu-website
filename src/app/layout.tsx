@@ -7,8 +7,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "OSSCCU - Open Source Software Community at City University",
-  description: "Join the Open Source Software Community at City University. Collaborate, learn, and create amazing projects together.",
+  title: "OSS CCU - Open Source Software Community at City University",
+  description:
+    "Join the Open Source Software Community at City University (OSS CCU). Collaborate, build, and ship amazing production-grade open-source software together.",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({

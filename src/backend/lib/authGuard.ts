@@ -11,3 +11,11 @@ export function isUserAdmin(email?: string, role?: string): boolean {
   if (email && (email.includes("admin") || email.endsWith("@ossccu.org"))) return true;
   return false;
 }
+
+export function canAccessAdmin(user?: { email?: string; isAdmin?: boolean; role?: string } | null, pinSession?: boolean): boolean {
+  if (user?.isAdmin) return true;
+  if (user?.role === "admin") return true;
+  if (user?.email && isUserAdmin(user.email, user.role)) return true;
+  if (pinSession) return true;
+  return false;
+}

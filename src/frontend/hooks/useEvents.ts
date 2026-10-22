@@ -89,11 +89,55 @@ export function useEvents() {
     return localCreated;
   };
 
+  const updateEvent = async (id: string, input: Partial<CommunityEventInput>) => {
+    try {
+      const res = await fetch(`/api/events/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, ...updated } : e)));
+        return updated;
+      }
+    } catch {
+      // Offline fallback
+    }
+
+    setEvents((prev) => {
+      const next = prev.map((e) => (e.id === id ? { ...e, ...input } : e));
+      if (typeof window !== "undefined") {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      }
+      return next;
+    });
+  };
+
+  const deleteEvent = async (id: string) => {
+    try {
+      await fetch(`/api/events/${id}`, { method: "DELETE" });
+    } catch {
+      // Offline fallback
+    }
+
+    setEvents((prev) => {
+      const next = prev.filter((e) => e.id !== id);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      }
+      return next;
+    });
+  };
+
   return {
     events,
     isLoading,
     error,
     refresh: fetchEvents,
     addEvent,
+    updateEvent,
+    deleteEvent,
   };
 }
